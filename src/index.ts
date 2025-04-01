@@ -274,6 +274,7 @@ const kFullStop = [
     "!",
     "?",
     "?!?",
+    ", eh?",
     ", or whatever.",
 ];
 

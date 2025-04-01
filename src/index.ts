@@ -99,6 +99,7 @@ const kAdjective = [
     "clumsy",
     "indigestible",
     "scandalous",
+    "musky",
 ];
 
 const kAdverb = [
@@ -324,6 +325,7 @@ const kDoable_thing = [
     madlib`a ${usually(kAdjective)} poop`,
     madlib`a ${usually(kAdjective)} fart`,
     madlib`${usually(kAdjective)} sharts`,
+    madlib`a ${usually(kAdjective)} trump`,
     madlib`some ${kAdjective} ${kLanguage} programming`,
     madlib`${rarely(kAdjective)} street art`,
     madlib`a ${kAdjective} Executive Order`,

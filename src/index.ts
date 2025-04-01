@@ -34,276 +34,267 @@ function madlib(strings, ...args) {
     }
 }
 
-function linked(randint, message: string) {
-  return `<a href="/${randint(0x10000)}/${randint(0x10000)}/${escapeURL(message)}/">${message}</a>`;
+function linked(randint, code: string, message: string) {
+    return `<a href="/${randint(0x10000)}/${randint(0x10000)}/${code}/${escapeURL(message)}/">${message}</a>`;
 }
 
 const rarely = (s, t='') => (ri) => madlib_expand(ri, ri(256) < 80 ? s : t);
 const evenly = (s, t='') => (ri) => madlib_expand(ri, ri(256) < 128 ? s : t);
 const usually = (s, t='') => (ri) => madlib_expand(ri, ri(256) < 166 ? s : t);
 
-const ln_r = (s) => (ri) => { let t = madlib_expand(ri, s); return ri(256) < 80 ? linked(ri, t) : t; };
-const ln_u = (s) => (ri) => { let t = madlib_expand(ri, s); return ri(256) < 166 ? linked(ri, t) : t; };
+const ln_r = (c, s) => (ri) => { let t = madlib_expand(ri, s); return ri(256) < 80 ? linked(ri, c, t) : t; };
+const ln_u = (c, s) => (ri) => { let t = madlib_expand(ri, s); return ri(256) < 166 ? linked(ri, c, t) : t; };
 
 
 const kPerson = [
-  "Donald Trump",
-  "Elon Musk",
-  "Vladimir Putin",
-  "JD Vance",
-  "Volodymyr Zelenskyy",
-  "The Queen",
-  "The King",
-  "Prince Harry",
-  "Scooby Doo",
-  "Kim Kardashian",
-  "Taylor Swift",
-  "Homer Simpson",
-  "Kanye West",
-  "Elvis Presley",
-  "Abraham Lincoln",
-  "Poopy McPoopFace",
+    "Donald Trump",
+    "Elon Musk",
+    "Vladimir Putin",
+    "JD Vance",
+    "Volodymyr Zelenskyy",
+    "The Queen",
+    "The King",
+    "Prince Harry",
+    "Scooby Doo",
+    "Kim Kardashian",
+    "Taylor Swift",
+    "Homer Simpson",
+    "Kanye West",
+    "Elvis Presley",
+    "Abraham Lincoln",
+    "Chuck Norris",
+    "Poopy McPoopFace",
+];
+
+const kAdjectiveBad = [
+    "smelly",
+    "grody",
+    "lumpy",
+    "milky",
+    "bilious",
+    "clumsy",
+    "indigestible",
+    "scandalous",
 ];
 
 const kAdjective = [
-  "smelly",
-  "wicked",
-  "grody",
-  "ground-breaking",
-  "high-tech",
-  "spectacular",
-  "resounding",
-  "hypersonic",
-  "lumpy",
-  "milky",
-  "serene",
-  "fragrant",
-  "bilious",
-  "thunderous",
-  "psychedelic",
-  "colourful",
-  "monotonous",
-  "cheesy",
-  "clumsy",
-  "indigestible",
-  "scandalous",
+    "smelly",
+    "wicked",
+    "grody",
+    "ground-breaking",
+    "high-tech",
+    "spectacular",
+    "resounding",
+    "hypersonic",
+    "lumpy",
+    "milky",
+    "serene",
+    "fragrant",
+    "bilious",
+    "thunderous",
+    "psychedelic",
+    "colourful",
+    "monotonous",
+    "cheesy",
+    "clumsy",
+    "indigestible",
+    "scandalous",
 ];
 
 const kAdverb = [
-  "very",
-  "spectacularly",
-  "resoundingly",
-  "objectively",
-  "literally",
-  "measurably",
-  "lumpily",
-  "fragrantly",
-  "thunderously",
-  "ground-breakingly",
-  "psychedelically",
-];
-
-const kMuchly = [
-  "very",
-  "highly",
-  "not",
-  "somewhat",
-  "faintly",
-  "gradually",
-  "profoundly",
+    "very",
+    "spectacularly",
+    "resoundingly",
+    "objectively",
+    "literally",
+    "measurably",
+    "lumpily",
+    "fragrantly",
+    "thunderously",
+    "ground-breakingly",
+    "psychedelically",
+    "mildly",
+    "highly",
+    "somewhat",
+    "faintly",
+    "gradually",
+    "profoundly",
+    "super-duper",
 ];
 
 const kImpression_pp = [
-  "impressed", 
-  "disappointed", 
-  "disgusted", 
-  "revolted", 
-  "moved to vomit", 
-  "shocked",
-  "grossed out", 
-  "incredulous", 
-  "scandalised",
-  "confused",
+    "impressed", 
+    "disappointed", 
+    "disgusted", 
+    "revolted", 
+    "moved to vomit", 
+    "shocked",
+    "grossed out", 
+    "incredulous", 
+    "scandalised",
+    "confused",
 ];
 
 const kCPU = [
-  "6502",
-  "z80",
-  "Arm",
-  "8086",
-  "RISC-V",
-  "6809",
-  "8051",
-  "PPC",
-  "Saturn",
+    "6502",
+    "z80",
+    "Arm",
+    "8086",
+    "RISC-V",
+    "6809",
+    "8051",
+    "PPC",
+    "Saturn",
 ];
 
 const kLanguage = [
-  "Python",
-  "C++",
-  "Ruby on Rails",
-  "Go",
-  "Rust",
-  "Brainfuck",
-  "Perl",
-  "COBOL",
-  "Fortran",
-  "JavaScript",
-  "APL",
-  "Haskell",
-  madlib`${kCPU} assembly language`,
+    "Python",
+    "C++",
+    "Ruby on Rails",
+    "Go",
+    "Rust",
+    "Brainfuck",
+    "Perl",
+    "COBOL",
+    "Fortran",
+    "JavaScript",
+    "APL",
+    "Haskell",
+    madlib`${kCPU} assembly language`,
 ];
 
 const kAlgorithm = [
-  "bogo sort",
-  "heap sort",
-  "Pollard's rho factorisation",
-  "Hello World",
-  "forkbomb",
-  "Miller-Rabin primality test",
-  "knapsack packing",
+    "bogo sort",
+    "heap sort",
+    "Pollard's rho factorisation",
+    "Hello World",
+    "forkbomb",
+    "Miller-Rabin primality test",
+    "knapsack packing",
 ];
 
 const kCoachableActivity = [
-  "tennis",
-  "golf",
-  "pilates",
-  "life",
-  "birth",
+    "tennis",
+    "golf",
+    "pilates",
+    "life",
+    "birth",
 ];
 
 const kPet = [
-  "cat",
-  "dog",
-  "axolotyl",
-  "goat",
-  "octopus",
+    "cat",
+    "dog",
+    "axolotyl",
+    "goat",
+    "octopus",
 ];
 
 const kProfessional = [
-  "caddy",
-  "hairdresser",
-  "earwax specialist",
-  "caddy",
-  "hairdresser",
-  madlib`${kCoachableActivity} coach`,
-  madlib`${kPet} trainer`,
-  madlib`${kPet} groomer`,
+    "caddy",
+    "hairdresser",
+    "earwax specialist",
+    "caddy",
+    "hairdresser",
+    madlib`${kCoachableActivity} coach`,
+    madlib`${kPet} trainer`,
+    madlib`${kPet} groomer`,
 ];
 
 const kRelative = [
-  "mother",
-  "father",
-  "great great grandmother",
-  "great great grandson",
+    "mother",
+    "father",
+    "great great grandmother",
+    "great great grandson",
 ];
 
 const kPerson1 = [
-  kPerson,
-  kPerson,
-  kPerson,
-  madlib`${kPerson}'s ${kPet}`,
-  madlib`${kPerson}'s ${kRelative}`,
-  madlib`${kPerson}'s ${kProfessional}`,
+    kPerson,
+    kPerson,
+    kPerson,
+    madlib`${kPerson}'s ${kPet}`,
+    madlib`${kPerson}'s ${kRelative}`,
+    madlib`${kPerson}'s ${kProfessional}`,
 ];
 const kPerson2 = [
-  kPerson1,
-  kPerson1,
-  kPerson1,
-  madlib`${kPerson1}'s ${kPet}`,
-  madlib`${kPerson1}'s ${kRelative}`,
-  madlib`${kPerson1}'s ${kProfessional}`,
+    kPerson1,
+    kPerson1,
+    kPerson1,
+    madlib`${kPerson1}'s ${kPet}`,
+    madlib`${kPerson1}'s ${kRelative}`,
+    madlib`${kPerson1}'s ${kProfessional}`,
 ];
 
 const kYear = (randint) => 1700 + randint(320);
-const kDecade = (randint) => `the ${1700 + 10 * randint(32)}'s`;
+const kDecade = (randint) => `${1700 + 10 * randint(32)}'s`;
 const kAges = [
-  "months",
-  "weeks",
-  "days",
-  "hours",
-  madlib`${(randint)=>randint(3600)+1} seconds of`,
+    "months",
+    "weeks",
+    "days",
+    "hours",
+    madlib`${(randint)=>randint(3600)+1} seconds of`,
 ];
 
 const kComputer = [
-  "Atari 2600",
-  "ZX Spectrum",
-  "Internet-connected toast rack",
-  madlib`${kCPU} computer`,
-  madlib`${kDecade} supercomputer`,
+    "Atari 2600",
+    "ZX Spectrum",
+    "Internet-connected toast rack",
+    madlib`${kCPU} computer`,
+    madlib`${kDecade} supercomputer`,
 ];
 
 const kThings = [
-  "cats",
-  "dogs",
-  "axolotyls",
-  "lambdas",
-  "closures",
-  "functional languages",
-  "Canadians",
-  "Americans",
-  "geese",
-  "RPN calculators",
-  "vim users",
-  "emacs users",
-  "finite state machines",
-  "factory methods",
-  madlib`${kComputer}s`,
+    "cats",
+    "dogs",
+    "axolotyls",
+    "lambdas",
+    "closures",
+    "functional languages",
+    "Canadians",
+    "Americans",
+    "geese",
+    "RPN calculators",
+    "vim users",
+    "emacs users",
+    "finite state machines",
+    "factory methods",
+    "people",
+    madlib`${kComputer}s`,
 ];
 
 const kFullStop = [
-  ".",
-  ".",
-  ".",
-  ".",
-  "!",
-  "?",
-  "?!?",
-  ", or whatever.",
+    ".",
+    ".",
+    ".",
+    ".",
+    ".",
+    ".",
+    ".",
+    "!",
+    "!",
+    "?",
+    "?!?",
+    ", or whatever.",
 ];
 
-const escapeHTML = (s) => s.replaceAll('&', '&amp;')
-                           .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-                           .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
-const escapeURL = (s) => encodeURIComponent(s.replaceAll(' ', '-'));
-const unescapeURL = (s) => escapeHTML(decodeURIComponent(s).replaceAll('-', ' '));
+const kVerb = [
+    "fly upside-down",
+    "walk backwards",
+    "burp",
+    "run around flapping their arms and yelling",
+    "argue",
+    madlib`obsess over ${kComputer}s`,
+];
 
-function RandomURIPath(n: number): string {
-  const pet =0| n % kPet.length;
-  n =0| n / kPet.length;
-  const adj =0| n % kAdjective.length;
-  n =0| n / kAdjective.length;
-  return `${n}/${escapeURL(kAdjective[adj])}-${escapeURL(kPet[pet])}`;
-}
+const synDid = [
+    "did",
+    "prefers to do",
+    "loves to do",
+    "refuses to do",
+    "pretended not to do",
+    "says they'll never do",
+];
 
-function* pageGenerator(hash: number[], topic: string) {
-  var seed: number = hash[0];
-  var hashi: number = 0;
-
-  function randint(n: number) {
-    seed =0| seed + 0x9e3779b9;
-    hashi = hashi % (hash.length - 1) + 1;
-    let t: number = seed ^ hash[hashi];
-    t ^= t >>> 16;
-    t ^= hash[hashi];
-    t = Math.imul(t, 0x21f0aaad);
-    t ^= t >>> 15;
-    t = Math.imul(t, 0x735a2d97);
-    t =0| ((t = t ^ t >>> 15) >>> 0) % n;
-    return t;
-  }
-  function pick(choices: string[]) {
-    return madlib_expand(randint, choices);
-  }
-
-  const kDoable_thing = [
-    madlib`a ${kAdjective} Executive Order`,
-    madlib`a ${kAdjective} fart`,
-    madlib`a ${usually(kAdjective)} shart`,
-    madlib`a ${usually(kAdjective)} poop`,
-    madlib`some ${kAdjective} ${kLanguage} programming`,
-  ];
-  const kInAPlace = [
+const kInAPlace = [
     "in school",
     "in the local pub",
     "in the Oval Office", 
@@ -323,13 +314,22 @@ function* pageGenerator(hash: number[], topic: string) {
     "on TV",
     "on Netflix",
     "on the dark web",
-    madlib`in ${ln_r(madlib`${kPerson1}'s bathtub`)}`,
+    madlib`in ${ln_r('o', madlib`${kPerson1}'s bathtub`)}`,
     madlib`in front of ${kPerson1}`,
-    madlib`on ${ln_r(madlib`${kPerson1}'s car`)}`,
+    madlib`on ${ln_r('o', madlib`${kPerson1}'s car`)}`,
     madlib`on top of ${kPerson1}`,
-  ];
+];
 
-  const kReporters = [
+const kDoable_thing = [
+    madlib`a ${usually(kAdjective)} poop`,
+    madlib`a ${usually(kAdjective)} fart`,
+    madlib`${usually(kAdjective)} sharts`,
+    madlib`some ${kAdjective} ${kLanguage} programming`,
+    madlib`${rarely(kAdjective)} street art`,
+    madlib`a ${kAdjective} Executive Order`,
+];
+
+const kReporters = [
     "Reuters",
     "Zamboni Drivers' Local Union",
     "Researchers",
@@ -346,15 +346,16 @@ function* pageGenerator(hash: number[], topic: string) {
     madlib`Close associates of ${kPerson1}`,
     madlib`Anonymous sources ${kInAPlace}`,
     kPerson2,
-  ];
-  const synReportedly = [
+];
+
+const synReportedly = [
     madlib`According to ${kReporters}`,
     madlib`${kReporters} report that`,
     madlib`${kReporters} told me`,
     madlib`${kReporters} was quoted by ${kReporters} as saying`,
-  ];
+];
 
-  const kWitness_was = [
+const kWitnesses_were = [
     "Onlookers were",
     "The boys were",
     "The girls were",
@@ -365,173 +366,225 @@ function* pageGenerator(hash: number[], topic: string) {
     "Most of the victims were",
     madlib`${kPerson1} was`,
     madlib`${kPerson1}'s children were`,
-  ];
-  const kReaction = [
+];
+const kReaction = [
     "Doctors hate it!",
-    madlib`${kWitness_was} ${kMuchly} ${kImpression_pp}.`
-  ];
+    madlib`${kWitnesses_were} ${kAdverb} ${kImpression_pp}.`
+];
 
-  const synRobotsTxt = [
+const synRobotsTxt = [
     "robots.txt",
     "ROBOTS.TXT",
     "Robots.Txt",
-  ];
-  const synScraping = [
+];
+const synScraping = [
     "scraping",
     "downloading",
     "leeching content",
     "crawling",
-  ];
+];
 
-  const kFunFact = [
+const kFunFact = [
     "Fun fact;",
     "Little-known fact;",
     "Did you know,"
-  ];
-  const kForPurpose = [
+];
+const kForPurpose = [
     "for self defense",
     "to attract mates",
     "to prevent baldness",
     "as a toothpaste substitute",
-  ];
-  const synInventor = ["inventor", "creator", "discoverer"];
-  const synHistorically = ["originally", "traditionally", "historically"];
-  const synGods = ["gods", "tax auditors", "overbearing parents", "cats"];
-  const synAvailable = [
+];
+const synInventor = ["inventor", "creator", "discoverer"];
+const synHistorically = ["originally", "traditionally", "historically"];
+const synGods = ["gods", "tax auditors", "overbearing parents", "cats"];
+const synAvailable = [
     "widespread",
     "affordable",
     "extinct",
     "deregulated",
     "electrically-powered",
-  ];
-  const synDidnt = [
+];
+const synDidnt = [
     "didn't",
     "neglected to",
     "failed to",
     "were too lazy to",
     "were too much of a jerk to",
-  ];
-  const synRedundant = [
+];
+const synRedundant = [
     "unnecessary",
     "redundant",
     "silly",
-    "worse than ignoring robots.txt when scraping",
-  ];
-  const synAdjoin = ["while", "and then", "because", "believing that"];
-  const synIdea = ["idea", "thought", "plan", "concept", "thing to do"];
-  const synBecauseThey = ["who", "because they"];
-  const synObey = ["respect", "obey", "honour", "conform to"];
+    "futile",
+    "ineffective",
+    madlib`more ${kAdjectiveBad} than ignoring ${synRobotsTxt} when ${synScraping}`,
+];
+const synWhile = [
+    "while",
+    "and then",
+    "because",
+    "believing that"
+];
+const synIdea = [
+    "idea",
+    "thought",
+    "plan",
+    "concept",
+    "thing to do"
+];
+const synBecauseThey = [
+    "who",
+    "because they",
+];
+const synObey = ["respect", "obey", "honour", "conform to"];
 
-  function fun_fact() {
 
-    return madlib`<p>${kFunFact} `(randint)
-    + pick([
-      madlib`${kPerson2} was the original ${synInventor} of ${topic}, but went unrecognised.  `,
-      madlib`Originally ${topic} was used by ${kThings} ${kForPurpose}.  `,
-      madlib`The ${topic} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.  `,
-    ])
-    + pick([
-      madlib`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
-      madlib`By ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.`,
-      madlib`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.`,
-    ])
-    + pick([
-      "",
-      madlib`  This is why they have always respected ${synRobotsTxt} until this very day!`,
-      madlib`  After that they never forgot to check ${synRobotsTxt} before scraping websites.`,
-      madlib`  And all because they ${synDidnt} respect ${synRobotsTxt}.`,
-    ])
-    + rarely("  Don't forget to like and subscribe!")(randint)
-    + '</p>\n';
-  }
+const escapeHTML = (s) => s.replaceAll('&', '&amp;')
+                           .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+                           .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+const escapeURL = (s) => encodeURIComponent(s.replaceAll(' ', '-'));
+const unescapeURL = (s) => escapeHTML(decodeURIComponent(s).replaceAll('-', ' '));
 
-  function a_list(len) {
-    var text = pick([
-      madlib`${synReportedly}:\n<ul>`,
-      madlib`Ten reasons ${kThings} are better than ${kThings}:\n<ul>`,
-      madlib`Top reasons to check ${synRobotsTxt} before ${synScraping}:\n<ul>`
-    ]);
-    for (var i = 0; i < len; ++i) {
-      text += pick([
-        madlib`<li>${kPerson2} did ${ln_u(madlib`${kDoable_thing} ${kInAPlace}`)}${kFullStop}</li>`,
-      ]);
+function* pageGenerator(hash: number[], path: string) {
+    var code = unescapeURL(path.split('/').slice(-3)[0]);
+    var topic = unescapeURL(path.split('/').slice(-2)[0]);
+    if (topic.length < 3) topic = "robots.txt";
+    var seed: number = hash[0];
+    var hashi: number = 0;
+
+    function randint(n: number) {
+        seed =0| seed + 0x9e3779b9;
+        hashi = hashi % (hash.length - 1) + 1;
+        let t: number = seed ^ hash[hashi];
+        t ^= t >>> 16;
+        t ^= hash[hashi];
+        t = Math.imul(t, 0x21f0aaad);
+        t ^= t >>> 15;
+        t = Math.imul(t, 0x735a2d97);
+        t =0| ((t = t ^ t >>> 15) >>> 0) % n;
+        return t;
     }
-    text += pick([
-      madlib`</ul>\n<p>${kReaction}</p>\n`
-    ]);
-    return text;
-  }
+    function pick(choices: string[]) {
+        return madlib_expand(randint, choices);
+    }
 
-  function a_paragraph() {
-    var text = '<p>';
-    for (let j = randint(3) + 3; j >= 0; --j) {
-      text += pick([
-        madlib`${synReportedly} ${kInAPlace}, ${kPerson1} did ${kDoable_thing}`,
-        madlib`${ln_r(kPerson1)} saw ${kPerson2} doing ${ln_r(madlib`${kDoable_thing} ${kInAPlace}`)}`,
-        madlib`${ln_r(kPerson2)} implemented a ${ln_r(madlib`${kAdjective} ${kAlgorithm}`)} in ${kLanguage}`,
-        madlib`${kPerson2} says they're "${kAdjective} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
-      ]);
-      if (randint(256) < 166) {
-        text += pick([
-          madlib` ${synAdjoin} ${kDoable_thing} was done by ${kPerson1}`,
-          madlib` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
-          madlib` and then blamed it on ${kPerson}`,
-          madlib` using a ${kComputer}`,
-          madlib` as revenge on ${kPerson2} ${synBecauseThey} didn't ${synObey} ${synRobotsTxt}`,
-          madlib` after ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
+    function fun_fact() {
+        const kButUnrecognised = [
+            "but went unrecognised",
+            "but was not recognised",
+            "but never earned credit",
+        ];
+        return madlib`<p>${kFunFact} `(randint)
+        + pick([
+            madlib`${kPerson2} was the original ${synInventor} of ${topic}, ${kButUnrecognised}.  `,
+            madlib`Originally ${topic} was used by ${kThings} ${kForPurpose}.  `,
+            madlib`The ${topic} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.  `,
+        ])
+        + pick([
+            madlib`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.  `,
+            madlib`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.  `,
+            madlib`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.  `,
+        ])
+        + pick([
+            "",
+            madlib`To this day most ${kThings} remain unaware.  `,
+            madlib`Only ${kPerson2} has ever successfully made this work ${kForPurpose}.  `,
+        ])
+        + pick([
+            "",
+            madlib`  This is why they have always respected ${synRobotsTxt} until this very day!`,
+            madlib`  After that they never forgot to check ${synRobotsTxt} before scraping websites.`,
+            madlib`  And all because they ${synDidnt} ${synObey} ${synRobotsTxt}.`,
+        ])
+        + rarely("  Don't forget to like and subscribe!")(randint)
+        + '</p>\n';
+    }
+
+    function a_list(len) {
+        var text = pick([
+            madlib`${synReportedly}:\n<ul>`,
+            madlib`Ten reasons ${kThings} are better than ${kThings}:\n<ul>`,
+            madlib`Top reasons to check ${synRobotsTxt} before ${synScraping}:\n<ul>`
         ]);
-      }
-      text += '.  ';
+        for (var i = 0; i < len; ++i) {
+          text += pick([
+              madlib`<li>${kPerson2} ${synDid} ${ln_u('o', madlib`${kDoable_thing} ${kInAPlace}`)}${kFullStop}</li>`,
+              madlib`<li>${kThings} can ${kVerb} for ${kAges} without once needing to do ${kDoable_thing}${kFullStop}</li>`,
+          ]);
+        }
+        text += pick([
+            madlib`</ul>\n<p>${kReaction}</p>\n`
+        ]);
+        return text;
     }
-    text += '</p>\n';
-    return text;
-  }
 
-  function head() {
-    const TypesOfThingsToKnow = ["numerous", "many", "most important", "worst"];
-    return pick([
-        madlib`<html><head><h1>Things to know about ${topic}</h1></head><body>
-<p>These are some of the ${TypesOfThingsToKnow} things you should know about ${topic}.  ${synReportedly} ${topic} is ${kAdverb} ${kAdjective}.</p>
-    `,
-    ]);
-  }
-
-  function tail() {
-    return "</body></html>";
-  }
-
-  yield head();
-  for (let i = randint(300) + 100; i >= 0; --i) {
-    let v;
-    switch (randint(3)) {
-    case 0: v = fun_fact(); break;
-    case 1: v = a_list(randint(12) + 4); break;
-    default: v = a_paragraph(); break;
+    function a_paragraph() {
+        var text = '<p>';
+        for (let j = randint(3) + 3; j >= 0; --j) {
+            text += pick([
+                madlib`${synReportedly}, ${kInAPlace}, ${kPerson1} ${synDid} ${kDoable_thing}`,
+                madlib`${ln_r('p', kPerson1)} saw ${kPerson2} doing ${ln_r('o', madlib`${kDoable_thing} ${kInAPlace}`)}`,
+                madlib`${ln_r('p', kPerson2)} implemented a ${ln_r('o', madlib`${kAdjective} ${kAlgorithm}`)} in ${kLanguage}`,
+                madlib`It took ${ln_r('p', kPerson2)} ${kAges} to code a ${ln_r('o', madlib`${kAdjective} ${kAlgorithm}`)}`,
+                madlib`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
+            ]);
+            if (randint(256) < 166) {
+                text += pick([
+                    madlib` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for.`,
+                    madlib` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
+                    madlib` and then blamed it on ${kPerson}`,
+                    madlib` using a ${kComputer}`,
+                    madlib` as revenge on ${kPerson2} ${synBecauseThey} didn't ${synObey} ${synRobotsTxt}`,
+                    madlib` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
+                ]);
+            }
+            text += '.  ';
+        }
+        text += '</p>\n';
+        return text;
     }
-    yield v;
-  }
-  yield tail();
+
+    function head() {
+        const synThingyest = ["numerous", "many", "most important", "worst", "dumbest", "most disappointing"];
+        return pick([
+            madlib`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/> <h1><title>Things to know about ${topic}</title></h1></head>\n<body>\n<p>These are some of the ${synThingyest} things you should know about ${topic}.  ${synReportedly} ${topic} is ${kAdverb} ${kAdjective}.</p>
+        `,
+        ]);
+    }
+
+    function tail() {
+        return "</body></html>";
+    }
+
+    yield head();
+    for (let i = randint(1000) + 300; i >= 0; --i) {
+        let v;
+        switch (randint(3)) {
+        case 0: v = fun_fact(); break;
+        case 1: v = a_list(randint(12) + 4); break;
+        default: v = a_paragraph(); break;
+        }
+        yield v;
+    }
+    yield tail();
 }
 
 
 const html_headers = new Headers({
-  'Content-Type': 'text/html',
-  'Cache-Control': 'immutable, public, max-age=2700000',
-  'Last-Modified': kLastModified,
+    'Content-Type': 'text/html',
+    'Cache-Control': 'immutable, public, max-age=2700000',
+    'Last-Modified': kLastModified,
 });
 
 const xml_headers = new Headers({
-  'Content-Type': 'application/xml',
-  'Cache-Control': 'immutable, public, max-age=604800',
+    'Content-Type': 'application/xml',
+    'Cache-Control': 'immutable, public, max-age=604800',
 });
 
 
-export default {
-  async fetch(request, env, ctx): Promise<Response> {
-    const url = new URL(request.url);
-    const origin = url.origin;
-    
-    if (url.pathname == '/robots.txt') return new Response(
+function robots_txt(origin: string): Response {
+    return new Response(
 `Sitemap: ${origin}/sitemap.xml
 
 user-agent: *
@@ -543,39 +596,54 @@ Allow: /sitemap.xml
 user-agent: *
 Disallow: /
 `);
+}
 
-    if (url.pathname == '/sitemap.xml') {
-      var pagelist = [];
-      for (let i = 0; i < 32; ++i) {
-        pagelist.push(`<url><loc>${origin}/public/${RandomURIPath(i)}/</loc>`
-                         + `<lastmod>${kXMLLastModified}</lastmod></url>`);
-      }
-      return new Response(`<?xml version='1.0' encoding='UTF-8'?>
+function sitemap_xml(origin: string): Response {
+    function RandomURIPath(n: number): string {
+        const pet =0| n % kPet.length;
+        n =0| n / kPet.length;
+        const adj =0| n % kAdjective.length;
+        n =0| n / kAdjective.length;
+        return `${n+100}/o/${escapeURL(kAdjective[adj])}-${escapeURL(kPet[pet])}`;
+    }
+
+    var pagelist = [];
+    for (let i = 0; i < 1024; ++i) {
+        pagelist.push(
+`<url><loc>${origin}/public/${RandomURIPath(i)}/</loc><lastmod>${kXMLLastModified}</lastmod></url>`);
+    }
+    return new Response(`<?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${pagelist.join('\n  ')}
 </urlset>`, { headers: xml_headers });
-    }
+}
 
-    var topic = unescapeURL(url.pathname.split('/').slice(-2)[0]);
-    if (topic.length < 3) topic = "robots.txt";
-
-    const enc = new TextEncoder();
-    const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(request.url));
-    var hash: number[] = Array.from(new Uint32Array(hashBuffer));
-    const generator = pageGenerator(hash, topic);
-    const stream = new ReadableStream({
-      async pull(controller) {
-        const { value, done } = generator.next();
-        if (done) {
-          controller.close();
-        } else {
-          controller.enqueue(enc.encode(value));
-        }
-      },
-      cancel() {
-        generator.return(undefined);
-      }
-    });
-    return new Response(stream);
-  },
+export default {
+    async fetch(request, env, ctx): Promise<Response> {
+        const url = new URL(request.url);
+        const origin = url.origin;
+        
+        if (url.pathname == '/robots.txt') return robots_txt(origin);
+        if (url.pathname == '/sitemap.xml') return sitemap_xml(origin);
+    
+        const enc = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(request.url));
+        var hash: number[] = Array.from(new Uint32Array(hashBuffer));
+    
+        const generator = pageGenerator(hash, url.pathname);
+        const stream = new ReadableStream({
+            async pull(controller) {
+                const { value, done } = generator.next();
+                if (done) {
+                    controller.close();
+                } else {
+                    controller.enqueue(enc.encode(value));
+                }
+            },
+            cancel() {
+                generator.return(undefined);
+            }
+        });
+        return new Response(stream, { headers: html_headers });
+    },
 } satisfies ExportedHandler<Env>;

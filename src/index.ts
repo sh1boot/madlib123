@@ -576,7 +576,7 @@ function* pageGenerator(hash: number[], path: string) {
             kEmpty,
             kEmpty,
             kEmpty,
-            madlib` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for.`,
+            madlib` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for`,
             madlib` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
             madlib` and then blamed it on ${kPerson}`,
             madlib` using a ${kComputer}`,
@@ -584,10 +584,10 @@ function* pageGenerator(hash: number[], path: string) {
             madlib` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
         ];
         return pick([
-            madlib`<p>${part1} ${part2}. ${part1} ${part2}.  ${part1} ${part2}.</p>\n`,
-            madlib`<p>${part1} ${part2}. ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.</p>\n`,
-            madlib`<p>${part1} ${part2}. ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.</p>\n`,
-            madlib`<p>${part1} ${part2}. ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.</p>\n`,
+            madlib`<p>${part1}${part2}. ${part1}${part2}.  ${part1}${part2}.</p>\n`,
+            madlib`<p>${part1}${part2}. ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.</p>\n`,
+            madlib`<p>${part1}${part2}. ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.</p>\n`,
+            madlib`<p>${part1}${part2}. ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.</p>\n`,
         ]);
     }
 

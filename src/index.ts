@@ -558,7 +558,7 @@ function* pageGenerator(hash: number[], path: string) {
     }
 
     yield head();
-    for (let i = randint(1000) + 300; i >= 0; --i) {
+    for (let i = randint(300) + 100; i >= 0; --i) {
         let v;
         switch (randint(3)) {
         case 0: v = fun_fact(); break;

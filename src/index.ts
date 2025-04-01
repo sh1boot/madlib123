@@ -11,8 +11,8 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
-const kLastModified = "Sun, 30 Mar 2025 23:17:59 GMT";
-const kXMLLastModified = "2025-03-30";
+const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
+const kXMLLastModified = "2025-04-01";
 
 function madlib_expand(randint, value) {
     while (Array.isArray(value)) {
@@ -44,7 +44,9 @@ const usually = (s, t='') => (ri) => madlib_expand(ri, ri(256) < 166 ? s : t);
 
 const ln_r = (c, s) => (ri) => { let t = madlib_expand(ri, s); return ri(256) < 80 ? linked(ri, c, t) : t; };
 const ln_u = (c, s) => (ri) => { let t = madlib_expand(ri, s); return ri(256) < 166 ? linked(ri, c, t) : t; };
+// TODO: repeat() function
 
+const kEmpty = "";
 
 const kPerson = [
     "Donald Trump",
@@ -473,91 +475,135 @@ function* pageGenerator(hash: number[], path: string) {
     }
 
     function fun_fact() {
-        const kButUnrecognised = [
+        const kButSomething = [
             "but went unrecognised",
             "but was not recognised",
             "but never earned credit",
         ];
-        return madlib`<p>${kFunFact} `(randint)
-        + pick([
-            madlib`${kPerson2} was the original ${synInventor} of ${topic}, ${kButUnrecognised}.  `,
-            madlib`Originally ${topic} was used by ${kThings} ${kForPurpose}.  `,
-            madlib`The ${topic} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.  `,
-        ])
-        + pick([
-            madlib`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.  `,
-            madlib`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.  `,
-            madlib`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.  `,
-        ])
-        + pick([
-            "",
-            madlib`To this day most ${kThings} remain unaware.  `,
-            madlib`Only ${kPerson2} has ever successfully made this work ${kForPurpose}.  `,
-        ])
-        + pick([
-            "",
-            madlib`  This is why they have always respected ${synRobotsTxt} until this very day!`,
-            madlib`  After that they never forgot to check ${synRobotsTxt} before scraping websites.`,
-            madlib`  And all because they ${synDidnt} ${synObey} ${synRobotsTxt}.`,
-        ])
-        + rarely("  Don't forget to like and subscribe!")(randint)
-        + '</p>\n';
+        const part1 = [
+            madlib`${kPerson2} was the original ${synInventor} of ${topic}, ${kButSomething}.`,
+            madlib`Originally ${topic} was used by ${kThings} ${kForPurpose}.`,
+            madlib`The ${topic} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
+        ];
+        const part2 = [
+            madlib`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
+            madlib`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.`,
+            madlib`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.`,
+        ];
+        const part3 = [
+            kEmpty,
+            madlib`To this day most ${kThings} remain unaware.`,
+            madlib`Only ${kPerson2} has ever successfully made this work ${kForPurpose}.`,
+        ];
+        const part4 = [
+            kEmpty,
+            madlib`This is why they have always respected ${synRobotsTxt} until this very day!`,
+            madlib`After that they never forgot to check ${synRobotsTxt} before scraping websites.`,
+            madlib`And all because they ${synDidnt} ${synObey} ${synRobotsTxt}.`,
+        ];
+        const part5 = [
+            kEmpty,
+            kEmpty,
+            madlib`${ln_u("v", "Subscribe to our mailing list")} for more ${kAdjective} facts!`,
+        ];
+        return pick([
+            madlib`<p>${kFunFact} ${part1}  ${part2}  ${part3}  ${part4}  ${part5}</p>\n`,
+        ]);
     }
 
-    function a_list(len) {
-        var text = pick([
-            madlib`${synReportedly}:\n<ul>`,
-            madlib`Ten reasons ${kThings} are better than ${kThings}:\n<ul>`,
-            madlib`Top reasons to check ${synRobotsTxt} before ${synScraping}:\n<ul>`
+    function a_list() {
+        const head = [
+            madlib`${synReportedly}`,
+            madlib`Ten reasons ${kThings} are better than ${kThings}`,
+            madlib`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
+        ];
+        const row = [
+            madlib`${kPerson2} ${synDid} ${ln_u('o', madlib`${kDoable_thing} ${kInAPlace}`)}${kFullStop}`,
+            madlib`${kThings} can ${kVerb} for ${kAges} without once needing to do ${kDoable_thing}${kFullStop}`,
+        ];
+        const tail = [
+            kReaction,
+        ];
+        return pick([
+            madlib`<p>${head}:</p><ul>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            </ul><p>${tail}</p>\n`,
+            madlib`<p>${head}:</p><ul>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            </ul><p>${tail}</p>\n`,
+            madlib`<p>${head}:</p><ul>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            <li>${row}</li>
+            </ul><p>${tail}</p>\n`,
         ]);
-        for (var i = 0; i < len; ++i) {
-          text += pick([
-              madlib`<li>${kPerson2} ${synDid} ${ln_u('o', madlib`${kDoable_thing} ${kInAPlace}`)}${kFullStop}</li>`,
-              madlib`<li>${kThings} can ${kVerb} for ${kAges} without once needing to do ${kDoable_thing}${kFullStop}</li>`,
-          ]);
-        }
-        text += pick([
-            madlib`</ul>\n<p>${kReaction}</p>\n`
-        ]);
-        return text;
     }
 
     function a_paragraph() {
-        var text = '<p>';
-        for (let j = randint(3) + 3; j >= 0; --j) {
-            text += pick([
-                madlib`${synReportedly}, ${kInAPlace}, ${kPerson1} ${synDid} ${kDoable_thing}`,
-                madlib`${ln_r('p', kPerson1)} saw ${kPerson2} doing ${ln_r('o', madlib`${kDoable_thing} ${kInAPlace}`)}`,
-                madlib`${ln_r('p', kPerson2)} implemented a ${ln_r('o', madlib`${kAdjective} ${kAlgorithm}`)} in ${kLanguage}`,
-                madlib`It took ${ln_r('p', kPerson2)} ${kAges} to code a ${ln_r('o', madlib`${kAdjective} ${kAlgorithm}`)}`,
-                madlib`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
-            ]);
-            if (randint(256) < 166) {
-                text += pick([
-                    madlib` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for.`,
-                    madlib` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
-                    madlib` and then blamed it on ${kPerson}`,
-                    madlib` using a ${kComputer}`,
-                    madlib` as revenge on ${kPerson2} ${synBecauseThey} didn't ${synObey} ${synRobotsTxt}`,
-                    madlib` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
-                ]);
-            }
-            text += '.  ';
-        }
-        text += '</p>\n';
-        return text;
+        const part1 = [
+            madlib`${synReportedly}, ${kInAPlace}, ${kPerson1} ${synDid} ${kDoable_thing}`,
+            madlib`${ln_r('p', kPerson1)} saw ${kPerson2} doing ${ln_r('o', madlib`${kDoable_thing} ${kInAPlace}`)}`,
+            madlib`${ln_r('p', kPerson2)} implemented a ${ln_r('o', madlib`${kAdjective} ${kAlgorithm}`)} in ${kLanguage}`,
+            madlib`It took ${ln_r('p', kPerson2)} ${kAges} to code a ${ln_r('o', madlib`${kAdjective} ${kAlgorithm}`)}`,
+            madlib`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
+        ];
+        const part2 = [
+            kEmpty,
+            kEmpty,
+            kEmpty,
+            madlib` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for.`,
+            madlib` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
+            madlib` and then blamed it on ${kPerson}`,
+            madlib` using a ${kComputer}`,
+            madlib` as revenge on ${kPerson2} ${synBecauseThey} didn't ${synObey} ${synRobotsTxt}`,
+            madlib` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
+        ];
+        return pick([
+            madlib`<p>${part1} ${part2}. ${part1} ${part2}.  ${part1} ${part2}.</p>\n`,
+            madlib`<p>${part1} ${part2}. ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.</p>\n`,
+            madlib`<p>${part1} ${part2}. ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.</p>\n`,
+            madlib`<p>${part1} ${part2}. ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.  ${part1} ${part2}.</p>\n`,
+        ]);
     }
 
     function head() {
+        const title = madlib`Things to know about ${topic}`;
         const synThingyest = ["numerous", "many", "most important", "worst", "dumbest", "most disappointing"];
+        const opening = pick([
+            madlib`These are some of the ${synThingyest} things you should know about ${topic}.  ${synReportedly} ${topic} is ${kAdverb} ${kAdjective}.`
+        ]);
         return pick([
-            madlib`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/> <h1><title>Things to know about ${topic}</title></h1></head>\n<body>\n<p>These are some of the ${synThingyest} things you should know about ${topic}.  ${synReportedly} ${topic} is ${kAdverb} ${kAdjective}.</p>
-        `,
+            madlib`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`,
         ]);
     }
 
     function tail() {
-        return "</body></html>";
+        return "<p>Don't forget to like and subscribe!</p>\n</body></html>";
     }
 
     yield head();
@@ -565,7 +611,7 @@ function* pageGenerator(hash: number[], path: string) {
         let v;
         switch (randint(3)) {
         case 0: v = fun_fact(); break;
-        case 1: v = a_list(randint(12) + 4); break;
+        case 1: v = a_list(); break;
         default: v = a_paragraph(); break;
         }
         yield v;

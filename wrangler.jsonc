@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "wandering-bread-3deb",
+	"name": "yellow-dust-ecb5",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-03-27",
 	"compatibility_flags": [

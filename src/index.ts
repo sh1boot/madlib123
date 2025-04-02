@@ -63,11 +63,11 @@ function linked(code: string, message) {
 }
 
 // TODO: optimise these a bit.
-const rarely = (s, t='') => (ri) => (ri(256) < 80 ? s : t);
+const rarely = (s, t='') => (ri) => (ri(256) < 60 ? s : t);
 const evenly = (s, t='') => (ri) => (ri(256) < 128 ? s : t);
-const usually = (s, t='') => (ri) => (ri(256) < 166 ? s : t);
-const ln_r = (c, s) => (ri) => (ri(256) < 80 ? linked(c, expand_once(ri, s)) : s);
-const ln_u = (c, s) => (ri) => (ri(256) < 166 ? linked(c, expand_once(ri, s)) : s);
+const usually = (s, t='') => (ri) => (ri(256) < 206 ? s : t);
+const ln_r = (c, s) => (ri) => (ri(256) < 60 ? linked(c, expand_once(ri, s)) : s);
+const ln_u = (c, s) => (ri) => (ri(256) < 206 ? linked(c, expand_once(ri, s)) : s);
 
 // TODO: repeat() function
 
@@ -541,7 +541,7 @@ function* pageGenerator(hash: number[], path: string) {
             madlib`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
         ];
         const row = [
-            madlib`${kPerson2} ${synDid} ${ln_u('o', madlib`${kDoable_thing} ${kInAPlace}`)}${kFullStop}`,
+            madlib`${kPerson2} ${synDid} ${ln_r('o', madlib`${kDoable_thing} ${kInAPlace}`)}${kFullStop}`,
             madlib`${kThings} can ${kVerb} for ${kAges} without once needing to do ${kDoable_thing}${kFullStop}`,
         ];
         const tail = [

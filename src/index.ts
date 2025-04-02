@@ -631,6 +631,7 @@ const kRandomCode = [
     "from cstdint import main",
     "var x=()=>()=>()=>1;",
     "abort()",
+    `printf("shiver in eternal darkness /n");`,
 ];
 const escapeHTML = (s) => s.replaceAll('&', '&amp;')
                            .replaceAll('<', '&lt;').replaceAll('>', '&gt;')

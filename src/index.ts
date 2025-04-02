@@ -17,8 +17,8 @@ const kXMLLastModified = "2025-04-01";
 const kModificationDate = new Date(kLastModified);
 
 const chunk_size = 4096;
-const loop_min = 1000;
-const loop_max = 4000;
+const loop_min = 300;
+const loop_max = 1000;
 
 const kEmpty = "";
 
@@ -396,7 +396,7 @@ const kDidAThing = [
     ml`${synDid} a ${kAdjective} fart`,
     ml`${synDid} a ${kAdjective} trump`,
     ml`${synDid} a ${kUsuallyAdjective} bottom-burp`,
-    ml`${synDid} a ${kUsuallyAdjective} sharts`,
+    ml`${synDid} a ${kUsuallyAdjective} shart`,
     ml`${synDid} ${kUsuallyAdjective} poops`,
     ml`${synDid} ${kAdjective} ${kLanguage} programming`,
     ml`${synDid} ${kRarelyAdjective} street art`,

@@ -14,39 +14,62 @@
 const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-01";
 
-function madlib_expand(randint, value) {
-    while (Array.isArray(value)) {
-        let n = randint(value.length);
-        value = value[n];
-    }
-    if (value.call) value = value(randint);
-    return value;
-}
-function madlib(strings, ...args) {
-    type RandintType = (n: number) => number;
-    return (randint:RandintType) => {
-        const result = [strings[0]];
-        args.forEach((arg, i) => {
-            var value = madlib_expand(randint, arg);
-            result.push(value, strings[i + 1]);
-        });
-        return result.join("");
-    }
-}
-
-function linked(randint, code: string, message: string) {
-    return `<a href="/${randint(0x10000)}/${randint(0x10000)}/${code}/${escapeURL(message)}/">${message}</a>`;
-}
-
-const rarely = (s, t='') => (ri) => madlib_expand(ri, ri(256) < 80 ? s : t);
-const evenly = (s, t='') => (ri) => madlib_expand(ri, ri(256) < 128 ? s : t);
-const usually = (s, t='') => (ri) => madlib_expand(ri, ri(256) < 166 ? s : t);
-
-const ln_r = (c, s) => (ri) => { let t = madlib_expand(ri, s); return ri(256) < 80 ? linked(ri, c, t) : t; };
-const ln_u = (c, s) => (ri) => { let t = madlib_expand(ri, s); return ri(256) < 166 ? linked(ri, c, t) : t; };
-// TODO: repeat() function
+const chunk_size = 4096;
 
 const kEmpty = "";
+
+function madlib(strings, ...args) {
+    return { strings: strings, args: args };
+}
+
+function madlib_flatten(randint, input, output=[]) {
+    output.push(input.strings[0]);
+    input.args.forEach((arg, i) => {
+        var value = arg;
+        while (!(typeof value === 'string' || typeof value == 'number')) {
+            if (Array.isArray(value)) {
+                let n = randint(value.length);
+                value = value[n];
+            } else if (typeof value === 'function') {
+                value = value(randint);
+            } else {
+                let oldlen = output.length;
+                madlib_flatten(randint, value, output);
+                value = null;
+                break;
+            }
+        }
+        if (value) {
+            output.push(value, input.strings[i + 1]);
+        } else {
+            output.push(input.strings[i + 1]);
+        }
+    });
+    return output;
+}
+
+function expand_once(randint, input) {
+    if (typeof input === 'string' || typeof input === 'number') return input;
+    if (typeof input === 'function' || Array.isArray(input)) {
+        input = madlib`${input}`;
+    }
+    let result = madlib_flatten(randint, input).join(kEmpty);
+    return result;
+}
+
+function linked(code: string, message) {
+    const number = (randint)=> randint(0x10000) + 1;
+    return madlib`<a href="/${number}/${number}/${code}/${escapeURL(message)}/">${message}</a>`;
+}
+
+// TODO: optimise these a bit.
+const rarely = (s, t='') => (ri) => (ri(256) < 80 ? s : t);
+const evenly = (s, t='') => (ri) => (ri(256) < 128 ? s : t);
+const usually = (s, t='') => (ri) => (ri(256) < 166 ? s : t);
+const ln_r = (c, s) => (ri) => (ri(256) < 80 ? linked(c, expand_once(ri, s)) : s);
+const ln_u = (c, s) => (ri) => (ri(256) < 166 ? linked(c, expand_once(ri, s)) : s);
+
+// TODO: repeat() function
 
 const kPerson = [
     "Donald Trump",
@@ -227,14 +250,14 @@ const kPerson2 = [
     madlib`${kPerson1}'s ${kProfessional}`,
 ];
 
-const kYear = (randint) => 1700 + randint(320);
+const kYear = (randint) => (1700 + randint(320)).toString();
 const kDecade = (randint) => `${1700 + 10 * randint(32)}'s`;
 const kAges = [
     "months",
     "weeks",
     "days",
     "hours",
-    madlib`${(randint)=>randint(3600)+1} seconds of`,
+    (randint) => `${randint(3600)+1} seconds of`,
 ];
 
 const kComputer = [
@@ -471,7 +494,7 @@ function* pageGenerator(hash: number[], path: string) {
         return t;
     }
     function pick(choices: string[]) {
-        return madlib_expand(randint, choices);
+        return choices[randint(choices.length)];
     }
 
     function fun_fact() {
@@ -594,29 +617,34 @@ function* pageGenerator(hash: number[], path: string) {
     function head() {
         const title = madlib`Things to know about ${topic}`;
         const synThingyest = ["numerous", "many", "most important", "worst", "dumbest", "most disappointing"];
-        const opening = pick([
+        const opening = [
             madlib`These are some of the ${synThingyest} things you should know about ${topic}.  ${synReportedly} ${topic} is ${kAdverb} ${kAdjective}.`
-        ]);
+        ];
         return pick([
             madlib`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`,
         ]);
     }
 
     function tail() {
-        return "<p>Don't forget to like and subscribe!</p>\n</body></html>";
+        return madlib`<p>Don't forget to like and subscribe!</p>\n</body></html>`;
     }
 
-    yield head();
-    for (let i = randint(300) + 100; i >= 0; --i) {
+    var output = madlib_flatten(randint, head());
+    const count = randint(300) + 100;
+    for (let i = 0; i < count; ++i) {
         let v;
         switch (randint(3)) {
-        case 0: v = fun_fact(); break;
-        case 1: v = a_list(); break;
-        default: v = a_paragraph(); break;
+        case 0: madlib_flatten(randint, fun_fact(), output); break;
+        case 1: madlib_flatten(randint, a_list(), output); break;
+        default: madlib_flatten(randint, a_paragraph(), output); break;
         }
-        yield v;
+        if (output.length >= chunk_size) {
+            yield output.join(kEmpty);
+            output = [];
+        }
     }
-    yield tail();
+    madlib_flatten(randint, tail(), output);
+    yield output.join(kEmpty);
 }
 
 

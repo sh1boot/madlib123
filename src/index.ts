@@ -629,7 +629,11 @@ function* pageGenerator(hash: number[], path: string) {
         return madlib`<p>Don't forget to like and subscribe!</p>\n</body></html>`;
     }
 
-    var output = madlib_flatten(randint, head());
+    // TODO: make an output object with push method which pre-allocates
+    // its storage to chunk_size + safety_margin.
+    var output = [];
+
+    madlib_flatten(randint, head(), output);
     const count = randint(300) + 100;
     for (let i = 0; i < count; ++i) {
         let v;

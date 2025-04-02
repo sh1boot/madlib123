@@ -488,6 +488,7 @@ const kDidAThing = [
     ml`didn't ${synIgnore} ${synRobotsTxt}`,
     ml`ran over a ${kProfessional}`,
     ml`ran over a ${kProfessional}`,
+    ml`manscaped their ${kPet}`,
 ];
 
 const kDoAGoodThing = [
@@ -706,6 +707,7 @@ function* pageGenerator(hash: number[], path: string) {
             ml`${synReportedly}`,
             ml`Ten reasons ${kThings} are better than ${kThings}`,
             ml`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
+            "TL;DR",
         ];
         const row = [
             ml`${kPerson2} ${ln_r('news', ml`${kDidAThing} ${kInAPlace}`)}${kFullStop}`,

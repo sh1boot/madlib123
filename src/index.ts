@@ -16,7 +16,7 @@ const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-01";
 const kModificationDate = new Date(kLastModified);
 
-const chunk_size = 4096;
+const chunk_size = 6144;
 const loop_min = 300;
 const loop_max = 1000;
 
@@ -26,45 +26,90 @@ function ml(strings, ...args) {
     return { strings: strings, args: args };
 }
 
-function mlFlatten(randint, input, output=[]) {
+class FixedBuffer {
+    size = 0;
+    data = new Array();
+    level = 0;
+    constructor(size: number = chunk_size) {
+        this.expand(size);
+    }
+
+    expand(size: number) {
+        this.size = size;
+        this.data.fill(this.level, size, kEmpty);
+    }
+
+    reset() {
+        this.level = 0;
+        this.expand(this.size);
+    }
+
+    get length() {
+        return this.level;
+    }
+
+    value() {
+        return this.data.slice(0, this.level);
+    }
+
+    join(s: string) {
+        return this.value().join(s);
+    }
+
+    push(value: string) {
+        // Optional: it'll expand as needed either way.
+        // if (this.level >= this.size) {
+        //     console.log("FixedBuffer overflow:", this.size);
+        //     this.expand(this.size << 1);
+        // }
+        this.data[this.level] = value;
+        this.level++;
+    }
+}
+
+function mlFlatten1(randint, value, output: FixedBuffer) {
+    while (!(value === null || value === undefined)) {
+        if (typeof value === 'string' || typeof value == 'number') {
+            output.push(value);
+            return true;
+        }
+        if (Array.isArray(value)) {
+            let n = randint(value.length);
+            value = value[n];
+        } else if (typeof value === 'function') {
+            value = value(randint);
+        } else {
+            mlFlatten(randint, value, output);
+            return true;
+        }
+    }
+    // This should never happen
+    output.push("***OOPS***");
+    return false;
+}
+
+function mlFlatten(randint, input, output:FixedBuffer) {
     output.push(input.strings[0]);
     input.args.forEach((arg, i) => {
-        var value = arg;
-        while (!(typeof value === 'string' || typeof value == 'number')) {
-            if (!value) {
-                console.log("undefined value:", value, arg, i, args);
-                value = '***OOPS***';
-                break;
-            }
-            if (Array.isArray(value)) {
-                let n = randint(value.length);
-                value = value[n];
-            } else if (typeof value === 'function') {
-                value = value(randint);
-            } else {
-                mlFlatten(randint, value, output);
-                value = null;
-                break;
-            }
+        var ok = mlFlatten1(randint, arg, output);
+        if (!ok) {
+            console.log("undefined value:", arg, i, input.args);
         }
-        if (value) {
-            output.push(value, input.strings[i + 1]);
-        } else {
-            output.push(input.strings[i + 1]);
-        }
+        output.push(input.strings[i + 1]);
     });
     return output;
 }
 
 function expand_once(randint, input) {
-    if (typeof input === 'string' || typeof input === 'number') return input;
-    if (typeof input === 'function' || Array.isArray(input)) {
-        input = ml`${input}`;
+    var output = new FixedBuffer(16);
+    let ok = mlFlatten1(randint, input, output);
+    if (!ok) {
+        console.log('could not expand:', input);
     }
-    let result = mlFlatten(randint, input).join(kEmpty);
-    return result;
+    return output.join(kEmpty);
 }
 
+// TODO: randomly inject hostnames from a list of other generators
 function linked(code: string, message) {
     const number = (randint)=> randint(0x10000) + 1;
     return ml`<a href="/${number}/${number}/${code}/${escapeURL(message)}/">${message}</a>`;
@@ -76,8 +121,6 @@ const evenly = (s, t = kEmpty) => [ s, t ];
 const usually = (s, t = kEmpty) => rarely(t, s);
 const ln_r = (c, s) => (ri) => (ri(256) < 60 ? linked(c, expand_once(ri, s)) : s);
 const ln_u = (c, s) => (ri) => (ri(256) < 206 ? linked(c, expand_once(ri, s)) : s);
-
-// TODO: repeat() function
 
 const kPerson = [
     "Donald Trump",
@@ -704,9 +747,7 @@ function* pageGenerator(hash: number[], path: string) {
         return mlFlatten(randint, ml`<p>Don't forget to like and subscribe!</p>\n</body></html>`, output);
     }
 
-    // TODO: make an output object with push method which pre-allocates
-    // its storage to chunk_size + safety_margin.
-    var output = [];
+    var output = new FixedBuffer(chunk_size * 2);
 
     head(output);
     const count = randint(loop_max - loop_min) + loop_min;
@@ -719,7 +760,7 @@ function* pageGenerator(hash: number[], path: string) {
         }
         if (output.length >= chunk_size) {
             yield output.join(kEmpty);
-            output = [];
+            output.reset();
         }
     }
     tail(output);
@@ -801,6 +842,8 @@ export default {
                 if (done) {
                     controller.close();
                 } else {
+                    //console.log(value.length);
+                    // TODO: something better?
                     controller.enqueue(enc.encode(value));
                 }
             },

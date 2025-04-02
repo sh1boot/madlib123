@@ -298,6 +298,28 @@ const kThings = [
     ml`${kComputer}s`,
 ];
 
+const kDialect = [
+    "British",
+    "Canadian",
+    "military",
+    "southern",
+    "northern",
+    "foamer",
+    "biker",
+    "crochet",
+    "funeral worker",
+];
+
+const kSomeWord = [
+    "trump",
+    "mildew",
+    "souffle",
+    "Gladys",
+    "delve",
+    "underscore",
+    "realm",
+];
+
 const kFullStop = [
     ".",
     ".",
@@ -573,6 +595,7 @@ function* pageGenerator(hash: number[], path: string) {
             ml`${kPerson2} was the original ${synInventor} of ${topic}, ${kButSomething}.`,
             ml`Originally ${topic} was used by ${kThings} ${kForPurpose}.`,
             ml`The ${topic} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
+            ml`In ${kDialect} slang, the word "${kSomeWord}" actually means to ${kDubiousVerb}.`,
         ];
         const part2 = [
             ml`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,

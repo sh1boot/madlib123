@@ -13,6 +13,7 @@
 
 const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-01";
+const kModificationDate = new Date(kLastModified);
 
 const chunk_size = 4096;
 
@@ -299,7 +300,7 @@ const kFullStop = [
     "!",
     "?",
     "?!?",
-    ", eh?",
+    ", eh.",
     ", or whatever.",
 ];
 
@@ -707,6 +708,14 @@ export default {
         if (url.pathname == '/robots.txt') return robots_txt(origin);
         if (url.pathname == '/sitemap.xml') return sitemap_xml(origin);
     
+        const ifModifiedSince = new Date(request.headers.get('if-modified-since')) || 0;
+        if (kModificationDate <= ifModifiedSince) {
+            return new Response(null, { status: 304 });
+        }
+        if (request.method === 'HEAD') {
+            return new Response(null, { headers: html_headers });
+        }
+
         const enc = new TextEncoder();
         const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(request.url));
         var hash: number[] = Array.from(new Uint32Array(hashBuffer));

@@ -606,19 +606,32 @@ const synIdea = [
     "thing to do"
 ];
 
-const synCode = [
+const synWriteCode = [
     "write",
     "code",
     "create",
     "implement",
     "author",
 ];
+
 const synBecauseThey = [
     "who",
     "because they",
 ];
 
+const kFactoid = [
+    ml`${kThings} can ${kVerb} for ${kAges} without once needing to ${kDubiousVerb}${kFullStop}`,
+];
 
+const kRandomCode = [
+    "int main(void) {",
+    "os.system('rm -rf /');",
+    ml`10 PRINT "${kPerson} IS COOL!!" : GOTO 10`,
+    "for i in range(0, 3**3**3**3.1415926535):",
+    "from cstdint import main",
+    "var x=()=>()=>()=>1;",
+    "abort()",
+];
 const escapeHTML = (s) => s.replaceAll('&', '&amp;')
                            .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
                            .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
@@ -659,6 +672,7 @@ function* pageGenerator(hash: number[], path: string) {
             ml`Originally ${topic} was used by ${kThings} ${kForPurpose}.`,
             ml`The ${topic} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
             ml`In ${kDialect} slang, the word "${kSomeWord}" actually means to ${kDubiousVerb}.`,
+            kFactoid,
         ];
         const part2 = [
             ml`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
@@ -694,7 +708,7 @@ function* pageGenerator(hash: number[], path: string) {
         ];
         const row = [
             ml`${kPerson2} ${ln_r('news', ml`${kDidAThing} ${kInAPlace}`)}${kFullStop}`,
-            ml`${kThings} can ${kVerb} for ${kAges} without once needing to ${kDubiousVerb}${kFullStop}`,
+            kFactoid,
         ];
         const tail = [
             kReaction,
@@ -711,7 +725,7 @@ function* pageGenerator(hash: number[], path: string) {
             ml`${synReportedly}, ${kInAPlace}, ${kPerson1} ${kDidAThing}`,
             ml`${ln_r('p', kPerson1)} saw ${kPerson2} ${ln_r('howto', ml`${kDubiousVerb} ${kInAPlace}`)}`,
             ml`${ln_r('p', kPerson2)} implemented a ${ln_r('algo', ml`${kAdjective} ${kAlgorithm}`)} in ${kLanguage}`,
-            ml`It took ${ln_r('p', kPerson2)} ${kAges} to ${synCode} a ${ln_r('algo', ml`${kAdjective} ${kAlgorithm}`)}`,
+            ml`It took ${ln_r('p', kPerson2)} ${kAges} to ${synWriteCode} a ${ln_r('algo', ml`${kAdjective} ${kAlgorithm}`)}`,
             ml`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
         ];
         const part2 = [
@@ -730,6 +744,34 @@ function* pageGenerator(hash: number[], path: string) {
         }
         output.push("</p>\n");
         return output;
+    }
+
+    function example_code(output) {
+        const lang = randint(kLanguage.length);
+        const head = [
+            ml`Here's some ${kLanguage[lang]} demonstrating ${ln_r('algo', ml`the ${kAdjective} ${kAlgorithm}`)}:`,
+        ];
+        const indent = [
+            "  ",
+            "    ",
+            "    \t",
+            "    \t  ",
+            "    \t    \t",
+            "    \t    \t ",
+        ];
+        const tail = [
+            ml`</pre>\n<p>This should solve the ${kAdjective} problem!</p>\n`,
+        ];
+        mlFlatten(randint, ml`<p>${head}</p>\n<pre>`, output);
+        var ind = 0;
+        for (let i = randint(12) + 4; i > 0; --i) {
+            mlFlatten(randint, ml`${indent[ind]}${kRandomCode}\n`, output);
+            ind += randint(3) - 1;
+            if (ind < 0) ind = 0;
+            if (ind >= indent.length) ind = indent.length - 1;
+        }
+        return mlFlatten(randint, ml`</ul><p>${tail}</p>\n`, output);
+
     }
 
     function head(output) {
@@ -753,9 +795,10 @@ function* pageGenerator(hash: number[], path: string) {
     const count = randint(loop_max - loop_min) + loop_min;
     for (let i = 0; i < count; ++i) {
         let v;
-        switch (randint(3)) {
+        switch (randint(5)) {
         case 0:  fun_fact(output); break;
         case 1:  a_list(output); break;
+        case 2:  example_code(output); break;
         default: a_paragraph(output); break;
         }
         if (output.length >= chunk_size) {

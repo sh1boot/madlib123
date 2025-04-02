@@ -11,31 +11,38 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+// TODO: pluck this from git metadata or something?
 const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-01";
 const kModificationDate = new Date(kLastModified);
 
 const chunk_size = 4096;
+const loop_min = 1000;
+const loop_max = 4000;
 
 const kEmpty = "";
 
-function madlib(strings, ...args) {
+function ml(strings, ...args) {
     return { strings: strings, args: args };
 }
 
-function madlib_flatten(randint, input, output=[]) {
+function mlFlatten(randint, input, output=[]) {
     output.push(input.strings[0]);
     input.args.forEach((arg, i) => {
         var value = arg;
         while (!(typeof value === 'string' || typeof value == 'number')) {
+            if (!value) {
+                console.log("undefined value:", value, arg, i, args);
+                value = '***OOPS***';
+                break;
+            }
             if (Array.isArray(value)) {
                 let n = randint(value.length);
                 value = value[n];
             } else if (typeof value === 'function') {
                 value = value(randint);
             } else {
-                let oldlen = output.length;
-                madlib_flatten(randint, value, output);
+                mlFlatten(randint, value, output);
                 value = null;
                 break;
             }
@@ -52,21 +59,21 @@ function madlib_flatten(randint, input, output=[]) {
 function expand_once(randint, input) {
     if (typeof input === 'string' || typeof input === 'number') return input;
     if (typeof input === 'function' || Array.isArray(input)) {
-        input = madlib`${input}`;
+        input = ml`${input}`;
     }
-    let result = madlib_flatten(randint, input).join(kEmpty);
+    let result = mlFlatten(randint, input).join(kEmpty);
     return result;
 }
 
 function linked(code: string, message) {
     const number = (randint)=> randint(0x10000) + 1;
-    return madlib`<a href="/${number}/${number}/${code}/${escapeURL(message)}/">${message}</a>`;
+    return ml`<a href="/${number}/${number}/${code}/${escapeURL(message)}/">${message}</a>`;
 }
 
 // TODO: optimise these a bit.
-const rarely = (s, t='') => (ri) => (ri(256) < 60 ? s : t);
-const evenly = (s, t='') => (ri) => (ri(256) < 128 ? s : t);
-const usually = (s, t='') => (ri) => (ri(256) < 206 ? s : t);
+const rarely = (s, t = kEmpty) => [ s, t, t, t ];
+const evenly = (s, t = kEmpty) => [ s, t ];
+const usually = (s, t = kEmpty) => rarely(t, s);
 const ln_r = (c, s) => (ri) => (ri(256) < 60 ? linked(c, expand_once(ri, s)) : s);
 const ln_u = (c, s) => (ri) => (ri(256) < 206 ? linked(c, expand_once(ri, s)) : s);
 
@@ -128,6 +135,9 @@ const kAdjective = [
     "musky",
 ];
 
+const kUsuallyAdjective = usually(kAdjective);
+const kRarelyAdjective = rarely(kAdjective);
+
 const kAdverb = [
     "very",
     "spectacularly",
@@ -150,14 +160,14 @@ const kAdverb = [
 ];
 
 const kImpression_pp = [
-    "impressed", 
-    "disappointed", 
-    "disgusted", 
-    "revolted", 
-    "moved to vomit", 
+    "impressed",
+    "disappointed",
+    "disgusted",
+    "revolted",
+    "moved to vomit",
     "shocked",
-    "grossed out", 
-    "incredulous", 
+    "grossed out",
+    "incredulous",
     "scandalised",
     "confused",
 ];
@@ -187,7 +197,7 @@ const kLanguage = [
     "JavaScript",
     "APL",
     "Haskell",
-    madlib`${kCPU} assembly language`,
+    ml`${kCPU} assembly language`,
 ];
 
 const kAlgorithm = [
@@ -222,9 +232,9 @@ const kProfessional = [
     "earwax specialist",
     "shaman",
     "meth dealer",
-    madlib`${kCoachableActivity} coach`,
-    madlib`${kPet} trainer`,
-    madlib`${kPet} groomer`,
+    ml`${kCoachableActivity} coach`,
+    ml`${kPet} trainer`,
+    ml`${kPet} groomer`,
 ];
 
 const kRelative = [
@@ -238,17 +248,17 @@ const kPerson1 = [
     kPerson,
     kPerson,
     kPerson,
-    madlib`${kPerson}'s ${kPet}`,
-    madlib`${kPerson}'s ${kRelative}`,
-    madlib`${kPerson}'s ${kProfessional}`,
+    ml`${kPerson}'s ${kPet}`,
+    ml`${kPerson}'s ${kRelative}`,
+    ml`${kPerson}'s ${kProfessional}`,
 ];
 const kPerson2 = [
     kPerson1,
     kPerson1,
     kPerson1,
-    madlib`${kPerson1}'s ${kPet}`,
-    madlib`${kPerson1}'s ${kRelative}`,
-    madlib`${kPerson1}'s ${kProfessional}`,
+    ml`${kPerson1}'s ${kPet}`,
+    ml`${kPerson1}'s ${kRelative}`,
+    ml`${kPerson1}'s ${kProfessional}`,
 ];
 
 const kYear = (randint) => (1700 + randint(320)).toString();
@@ -265,8 +275,8 @@ const kComputer = [
     "Atari 2600",
     "ZX Spectrum",
     "Internet-connected toast rack",
-    madlib`${kCPU} computer`,
-    madlib`${kDecade} supercomputer`,
+    ml`${kCPU} computer`,
+    ml`${kDecade} supercomputer`,
 ];
 
 const kThings = [
@@ -285,7 +295,7 @@ const kThings = [
     "finite state machines",
     "factory methods",
     "people",
-    madlib`${kComputer}s`,
+    ml`${kComputer}s`,
 ];
 
 const kFullStop = [
@@ -308,24 +318,18 @@ const kVerb = [
     "fly upside-down",
     "walk backwards",
     "burp",
-    "run around flapping their arms and yelling",
-    "argue",
-    madlib`obsess over ${kComputer}s`,
-];
-
-const synDid = [
-    "did",
-    "prefers to do",
-    "loves to do",
-    "refuses to do",
-    "pretended not to do",
-    "says they'll never do",
+    "run around flapping their arms and yelling profanity",
+    "yell at clouds",
+    "rock out to polka music",
+    ml`argue with ${kPet}s`,
+    ml`obsess over ${kComputer}s`,
 ];
 
 const kInAPlace = [
     "in school",
-    "in the local pub",
-    "in the Oval Office", 
+    "at the local pub",
+    "in the Oval Office",
+    "in parliament",
     "in Picadilly Circus",
     "in their undies",
     "in your undies",
@@ -336,26 +340,91 @@ const kInAPlace = [
     "in a sock",
     "in your face",
     "in rural China",
-    "on the toilet", 
+    "on the toilet",
     "on the streets of New York",
     "on the teacher",
     "on TV",
     "on Netflix",
     "on the dark web",
-    madlib`in ${ln_r('o', madlib`${kPerson1}'s bathtub`)}`,
-    madlib`in front of ${kPerson1}`,
-    madlib`on ${ln_r('o', madlib`${kPerson1}'s car`)}`,
-    madlib`on top of ${kPerson1}`,
+    ml`in ${kPerson1}'s bathtub`,
+    ml`on ${kPerson1}'s car`,
+    ml`in front of ${kPerson1}`,
+    ml`on top of ${kPerson1}`,
 ];
 
-const kDoable_thing = [
-    madlib`a ${usually(kAdjective)} poop`,
-    madlib`a ${usually(kAdjective)} fart`,
-    madlib`${usually(kAdjective)} sharts`,
-    madlib`a ${usually(kAdjective)} trump`,
-    madlib`some ${kAdjective} ${kLanguage} programming`,
-    madlib`${rarely(kAdjective)} street art`,
-    madlib`a ${kAdjective} Executive Order`,
+const synObey = [
+    "respect",
+    "obey",
+    "honour",
+    "conform to",
+];
+
+const synIgnore = [
+    "ignore",
+    "disregard",
+    "overlook",
+];
+
+const synRobotsTxt = [
+    "robots.txt",
+    "ROBOTS.TXT",
+    "Robots.Txt",
+];
+
+const synDidnt = [
+    "didn't",
+    "neglected to",
+    "failed to",
+    "were too lazy to",
+    "were too much of a jerk to",
+];
+
+const synDid = [
+    "did",
+    "prefers to do",
+    "wants to do",
+    "loves to do",
+    "refuses to do",
+    "pretended to not do",
+    "says they'll never do",
+];
+
+const kDidAThing = [
+    "farted",
+    "trumped",
+    "pooped",
+    ml`${synDid} a ${kAdjective} fart`,
+    ml`${synDid} a ${kAdjective} trump`,
+    ml`${synDid} a ${kUsuallyAdjective} bottom-burp`,
+    ml`${synDid} a ${kUsuallyAdjective} sharts`,
+    ml`${synDid} ${kUsuallyAdjective} poops`,
+    ml`${synDid} ${kAdjective} ${kLanguage} programming`,
+    ml`${synDid} ${kRarelyAdjective} street art`,
+    ml`didn't ${synIgnore} ${synRobotsTxt}`,
+    ml`ran over a ${kProfessional}`,
+    ml`ran over a ${kProfessional}`,
+];
+
+const kDoAGoodThing = [
+    ml`${synObey} ${synRobotsTxt}`,
+    "brush their teeth",
+];
+
+const kDubiousVerb = [
+    "fart",
+    "trump",
+    "poop",
+    ml`do a ${kAdjective} fart`,
+    ml`do a ${kAdjective} trump`,
+    ml`do ${kAdjective} poops`,
+    ml`do a ${kUsuallyAdjective} bottom-burp`,
+    ml`do a ${kUsuallyAdjective} shart`,
+    ml`write ${kAdjective} ${kLanguage} code`,
+    ml`create ${kRarelyAdjective} street art`,
+    ml`issue a ${kAdjective} Executive Order`,
+    kDoAGoodThing,
+    kDoAGoodThing,
+    kVerb,
 ];
 
 const kReporters = [
@@ -371,17 +440,17 @@ const kReporters = [
     "People on the internet",
     "Witnesses",
     "Insiders",
-    madlib`Scientists ${kInAPlace}`,
-    madlib`Close associates of ${kPerson1}`,
-    madlib`Anonymous sources ${kInAPlace}`,
+    ml`Scientists ${kInAPlace}`,
+    ml`Close associates of ${kPerson1}`,
+    ml`Anonymous sources ${kInAPlace}`,
     kPerson2,
 ];
 
 const synReportedly = [
-    madlib`According to ${kReporters}`,
-    madlib`${kReporters} report that`,
-    madlib`${kReporters} told me`,
-    madlib`${kReporters} was quoted by ${kReporters} as saying`,
+    ml`According to ${kReporters}`,
+    ml`${kReporters} report that`,
+    ml`${kReporters} told me`,
+    ml`${kReporters} was quoted by ${kReporters} as saying`,
 ];
 
 const kWitnesses_were = [
@@ -393,19 +462,14 @@ const kWitnesses_were = [
     "Reporters were",
     "The International Olympic Committee was",
     "Most of the victims were",
-    madlib`${kPerson1} was`,
-    madlib`${kPerson1}'s children were`,
+    ml`${kPerson1} was`,
+    ml`${kPerson1}'s children were`,
 ];
 const kReaction = [
     "Doctors hate it!",
-    madlib`${kWitnesses_were} ${kAdverb} ${kImpression_pp}.`
+    ml`${kWitnesses_were} ${kAdverb} ${kImpression_pp}.`
 ];
 
-const synRobotsTxt = [
-    "robots.txt",
-    "ROBOTS.TXT",
-    "Robots.Txt",
-];
 const synScraping = [
     "scraping",
     "downloading",
@@ -416,7 +480,8 @@ const synScraping = [
 const kFunFact = [
     "Fun fact;",
     "Little-known fact;",
-    "Did you know,"
+    "Did you know,",
+    ml`According to ${kReporters}`,
 ];
 const kForPurpose = [
     "for self defense",
@@ -434,20 +499,13 @@ const synAvailable = [
     "deregulated",
     "electrically-powered",
 ];
-const synDidnt = [
-    "didn't",
-    "neglected to",
-    "failed to",
-    "were too lazy to",
-    "were too much of a jerk to",
-];
 const synRedundant = [
     "unnecessary",
     "redundant",
     "silly",
     "futile",
     "ineffective",
-    madlib`more ${kAdjectiveBad} than ignoring ${synRobotsTxt} when ${synScraping}`,
+    ml`more ${kAdjectiveBad} than ignoring ${synRobotsTxt} when ${synScraping}`,
 ];
 const synWhile = [
     "while",
@@ -462,11 +520,18 @@ const synIdea = [
     "concept",
     "thing to do"
 ];
+
+const synCode = [
+    "write",
+    "code",
+    "create",
+    "implement",
+    "author",
+];
 const synBecauseThey = [
     "who",
     "because they",
 ];
-const synObey = ["respect", "obey", "honour", "conform to"];
 
 
 const escapeHTML = (s) => s.replaceAll('&', '&amp;')
@@ -498,157 +563,123 @@ function* pageGenerator(hash: number[], path: string) {
         return choices[randint(choices.length)];
     }
 
-    function fun_fact() {
+    function fun_fact(output) {
         const kButSomething = [
             "but went unrecognised",
             "but was not recognised",
             "but never earned credit",
         ];
         const part1 = [
-            madlib`${kPerson2} was the original ${synInventor} of ${topic}, ${kButSomething}.`,
-            madlib`Originally ${topic} was used by ${kThings} ${kForPurpose}.`,
-            madlib`The ${topic} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
+            ml`${kPerson2} was the original ${synInventor} of ${topic}, ${kButSomething}.`,
+            ml`Originally ${topic} was used by ${kThings} ${kForPurpose}.`,
+            ml`The ${topic} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
         ];
         const part2 = [
-            madlib`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
-            madlib`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.`,
-            madlib`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.`,
+            ml`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
+            ml`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.`,
+            ml`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.`,
         ];
         const part3 = [
             kEmpty,
-            madlib`To this day most ${kThings} remain unaware.`,
-            madlib`Only ${kPerson2} has ever successfully made this work ${kForPurpose}.`,
+            ml`To this day most ${kThings} remain ${kAdjective}.`,
+            ml`Only ${kPerson2} has ever successfully made this work ${kForPurpose}.`,
         ];
         const part4 = [
             kEmpty,
-            madlib`This is why they have always respected ${synRobotsTxt} until this very day!`,
-            madlib`After that they never forgot to check ${synRobotsTxt} before scraping websites.`,
-            madlib`And all because they ${synDidnt} ${synObey} ${synRobotsTxt}.`,
+            ml`This is why they have always respected ${synRobotsTxt} until this very day!`,
+            ml`After that they never forgot to check ${synRobotsTxt} before ${synScraping} websites.`,
+            ml`And all because they ${synDidnt} ${kDoAGoodThing}.`,
         ];
         const part5 = [
             kEmpty,
             kEmpty,
-            madlib`${ln_u("v", "Subscribe to our mailing list")} for more ${kAdjective} facts!`,
+            ml`${ln_u("v", "Subscribe to our mailing list")} for more ${kAdjective} facts!`,
         ];
-        return pick([
-            madlib`<p>${kFunFact} ${part1}  ${part2}  ${part3}  ${part4}  ${part5}</p>\n`,
-        ]);
+        return mlFlatten(randint, pick([
+            ml`<p>${kFunFact} ${part1}  ${part2}  ${part3}  ${part4}  ${part5}</p>\n`,
+        ]), output);
     }
 
-    function a_list() {
+    function a_list(output) {
         const head = [
-            madlib`${synReportedly}`,
-            madlib`Ten reasons ${kThings} are better than ${kThings}`,
-            madlib`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
+            ml`${synReportedly}`,
+            ml`Ten reasons ${kThings} are better than ${kThings}`,
+            ml`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
         ];
         const row = [
-            madlib`${kPerson2} ${synDid} ${ln_r('o', madlib`${kDoable_thing} ${kInAPlace}`)}${kFullStop}`,
-            madlib`${kThings} can ${kVerb} for ${kAges} without once needing to do ${kDoable_thing}${kFullStop}`,
+            ml`${kPerson2} ${ln_r('news', ml`${kDidAThing} ${kInAPlace}`)}${kFullStop}`,
+            ml`${kThings} can ${kVerb} for ${kAges} without once needing to ${kDubiousVerb}${kFullStop}`,
         ];
         const tail = [
             kReaction,
         ];
-        return pick([
-            madlib`<p>${head}:</p><ul>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            </ul><p>${tail}</p>\n`,
-            madlib`<p>${head}:</p><ul>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            </ul><p>${tail}</p>\n`,
-            madlib`<p>${head}:</p><ul>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            <li>${row}</li>
-            </ul><p>${tail}</p>\n`,
-        ]);
+        mlFlatten(randint, ml`<p>${head}:</p><ul>\n`, output);
+        for (let i = randint(12) + 4; i > 0; --i) {
+            mlFlatten(randint, ml`<li>${row}</li>\n`, output);
+        }
+        return mlFlatten(randint, ml`</ul><p>${tail}</p>\n`, output);
     }
 
-    function a_paragraph() {
+    function a_paragraph(output) {
         const part1 = [
-            madlib`${synReportedly}, ${kInAPlace}, ${kPerson1} ${synDid} ${kDoable_thing}`,
-            madlib`${ln_r('p', kPerson1)} saw ${kPerson2} doing ${ln_r('o', madlib`${kDoable_thing} ${kInAPlace}`)}`,
-            madlib`${ln_r('p', kPerson2)} implemented a ${ln_r('o', madlib`${kAdjective} ${kAlgorithm}`)} in ${kLanguage}`,
-            madlib`It took ${ln_r('p', kPerson2)} ${kAges} to code a ${ln_r('o', madlib`${kAdjective} ${kAlgorithm}`)}`,
-            madlib`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
+            ml`${synReportedly}, ${kInAPlace}, ${kPerson1} ${kDidAThing}`,
+            ml`${ln_r('p', kPerson1)} saw ${kPerson2} ${ln_r('howto', ml`${kDubiousVerb} ${kInAPlace}`)}`,
+            ml`${ln_r('p', kPerson2)} implemented a ${ln_r('algo', ml`${kAdjective} ${kAlgorithm}`)} in ${kLanguage}`,
+            ml`It took ${ln_r('p', kPerson2)} ${kAges} to ${synCode} a ${ln_r('algo', ml`${kAdjective} ${kAlgorithm}`)}`,
+            ml`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
         ];
         const part2 = [
             kEmpty,
             kEmpty,
-            kEmpty,
-            madlib` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for`,
-            madlib` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
-            madlib` and then blamed it on ${kPerson}`,
-            madlib` using a ${kComputer}`,
-            madlib` as revenge on ${kPerson2} ${synBecauseThey} didn't ${synObey} ${synRobotsTxt}`,
-            madlib` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
+            ml` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for`,
+            ml` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
+            ml` and then blamed it on ${kPerson}`,
+            ml` using a ${kComputer}`,
+            ml` as revenge on ${kPerson2} ${synBecauseThey} didn't ${kDoAGoodThing}`,
+            ml` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
         ];
-        return pick([
-            madlib`<p>${part1}${part2}. ${part1}${part2}.  ${part1}${part2}.</p>\n`,
-            madlib`<p>${part1}${part2}. ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.</p>\n`,
-            madlib`<p>${part1}${part2}. ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.</p>\n`,
-            madlib`<p>${part1}${part2}. ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.  ${part1}${part2}.</p>\n`,
-        ]);
+        output.push("<p>");
+        for (let i = randint(4) + 3; i > 0; --i) {
+            mlFlatten(randint, ml`${part1}${part2}.\n`, output);
+        }
+        output.push("</p>\n");
+        return output;
     }
 
-    function head() {
-        const title = madlib`Things to know about ${topic}`;
+    function head(output) {
+        const title = ml`Things to know about ${topic}`;
         const synThingyest = ["numerous", "many", "most important", "worst", "dumbest", "most disappointing"];
         const opening = [
-            madlib`These are some of the ${synThingyest} things you should know about ${topic}.  ${synReportedly} ${topic} is ${kAdverb} ${kAdjective}.`
+            ml`These are some of the ${synThingyest} things you should know about ${topic}.  ${synReportedly} ${topic} is ${kAdverb} ${kAdjective}.`
         ];
-        return pick([
-            madlib`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`,
-        ]);
+        return mlFlatten(randint, pick([
+            ml`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`,
+        ]), output);
     }
 
-    function tail() {
-        return madlib`<p>Don't forget to like and subscribe!</p>\n</body></html>`;
+    function tail(output) {
+        return mlFlatten(randint, ml`<p>Don't forget to like and subscribe!</p>\n</body></html>`, output);
     }
 
     // TODO: make an output object with push method which pre-allocates
     // its storage to chunk_size + safety_margin.
     var output = [];
 
-    madlib_flatten(randint, head(), output);
-    const count = randint(300) + 100;
+    head(output);
+    const count = randint(loop_max - loop_min) + loop_min;
     for (let i = 0; i < count; ++i) {
         let v;
         switch (randint(3)) {
-        case 0: madlib_flatten(randint, fun_fact(), output); break;
-        case 1: madlib_flatten(randint, a_list(), output); break;
-        default: madlib_flatten(randint, a_paragraph(), output); break;
+        case 0:  fun_fact(output); break;
+        case 1:  a_list(output); break;
+        default: a_paragraph(output); break;
         }
         if (output.length >= chunk_size) {
             yield output.join(kEmpty);
             output = [];
         }
     }
-    madlib_flatten(randint, tail(), output);
+    tail(output);
     yield output.join(kEmpty);
 }
 
@@ -704,10 +735,10 @@ export default {
     async fetch(request, env, ctx): Promise<Response> {
         const url = new URL(request.url);
         const origin = url.origin;
-        
+
         if (url.pathname == '/robots.txt') return robots_txt(origin);
         if (url.pathname == '/sitemap.xml') return sitemap_xml(origin);
-    
+
         const ifModifiedSince = new Date(request.headers.get('if-modified-since')) || 0;
         if (kModificationDate <= ifModifiedSince) {
             return new Response(null, { status: 304 });
@@ -719,7 +750,7 @@ export default {
         const enc = new TextEncoder();
         const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(request.url));
         var hash: number[] = Array.from(new Uint32Array(hashBuffer));
-    
+
         const generator = pageGenerator(hash, url.pathname);
         const stream = new ReadableStream({
             async pull(controller) {

@@ -307,7 +307,7 @@ const kDialect = [
     "foamer",
     "biker",
     "crochet",
-    "funeral worker",
+    "funeral-worker",
 ];
 
 const kSomeWord = [
@@ -315,9 +315,29 @@ const kSomeWord = [
     "mildew",
     "souffle",
     "Gladys",
+
+// https://aclanthology.org/2025.coling-main.426.pdf
+    "delves",
+    "delved",
+    "delving",
+    "showcasing",
     "delve",
+    "boasts",
+    "underscores",
+    "comprehending",
+    "intricacies",
+    "surpassing",
+    "intricate",
+    "underscoring",
+    "garnered",
+    "showcases",
+    "emphasizing",
     "underscore",
     "realm",
+    "surpasses",
+    "groundbreaking",
+    "advancements",
+    "aligns",
 ];
 
 const kFullStop = [

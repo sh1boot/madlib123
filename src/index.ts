@@ -121,7 +121,7 @@ function mlFlatten(randint, input, output:FixedBuffer) {
 }
 
 function expand_once(randint, input) {
-    var output = new FixedBuffer(16);
+    var output = new FixedBuffer(256);
     let ok = mlFlatten1(randint, input, output);
     if (!ok) {
         console.log('could not expand:', input);

@@ -16,75 +16,95 @@ const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-01";
 const kModificationDate = new Date(kLastModified);
 
-const chunk_size = 6144;
+const chunk_size = 8192;
 const loop_min = 300;
 const loop_max = 1000;
 
-const kEmpty = "";
+var UTF8 = (v) => {
+    const utf8enc = new TextEncoder();
+    if (typeof v === 'string') return utf8enc.encode(v);
+    return v.map((s) => (typeof s === 'string') ? utf8enc.encode(s) : s);
+};
+
+const IntToUTF8 = (n:number, base:number = 10) => {
+    return new TextEncoder().encode(n.toString(base));
+};
+
+const kEmpty = UTF8("");
+const kOops = UTF8("***OOPS***");
+
+const utf8cache = new WeakMap();
 
 function ml(strings, ...args) {
-    return { strings: strings, args: args };
+    // const badargs = args.some((x) => x === null || x === undefined || typeof x === 'string' || typeof x === 'number');
+    // if (badargs) {
+    //     console.trace(strings, 'bad ml args:', args);
+    // }
+    const UTF8 = (v) => {
+        const utf8enc = new TextEncoder();
+        if (!utf8cache.has(v)) {
+            utf8cache.set(v, v.map((s) => utf8enc.encode(s)));
+        }
+        return utf8cache.get(v);
+    }
+    return { strings: UTF8(strings), args: args };
 }
 
 class FixedBuffer {
+    data = null;
     size = 0;
-    data = new Array();
-    level = 0;
-    constructor(size: number = chunk_size) {
-        this.expand(size);
-    }
-
-    expand(size: number) {
+    length = 0;
+    constructor(size: number = chunk_size, margin: number = 1024) {
         this.size = size;
-        this.data.fill(this.level, size, kEmpty);
+        this.data = new Uint8Array(size + margin);
     }
 
     reset() {
-        this.level = 0;
-        this.expand(this.size);
+        this.length = 0;
     }
 
-    get length() {
-        return this.level;
+    bytes() {
+        return this.data.subarray(0, this.length);
     }
 
-    value() {
-        return this.data.slice(0, this.level);
+    head(n: number) {
+        if (n > this.length) n = this.length;
+        return this.data.subarray(0, n);
     }
 
-    join(s: string) {
-        return this.value().join(s);
+    shift(n: number) {
+        assert(n <= this.length);
+        this.data.copyWithin(0, n, this.length);
+        this.length -= n;
     }
 
-    push(value: string) {
-        // Optional: it'll expand as needed either way.
-        // if (this.level >= this.size) {
-        //     console.log("FixedBuffer overflow:", this.size);
-        //     this.expand(this.size << 1);
-        // }
-        this.data[this.level] = value;
-        this.level++;
+    push(value: Uint8Array) {
+        this.data.set(value, this.length);
+        this.length += value.length;
     }
 }
 
 function mlFlatten1(randint, value, output: FixedBuffer) {
     while (!(value === null || value === undefined)) {
-        if (typeof value === 'string' || typeof value == 'number') {
+        if (value instanceof Uint8Array) {
             output.push(value);
             return true;
-        }
-        if (Array.isArray(value)) {
+        } else if (Array.isArray(value)) {
             let n = randint(value.length);
             value = value[n];
         } else if (typeof value === 'function') {
             value = value(randint);
         } else {
+            // if (typeof value === 'number' || typeof value === 'string') {
+            //     console.log("value has wrong type:", value, typeof value);
+            //     break;
+            // }
             mlFlatten(randint, value, output);
             return true;
         }
     }
     // This should never happen
-    output.push("***OOPS***");
+    output.push(kOops);
     return false;
 }
 
@@ -106,12 +126,21 @@ function expand_once(randint, input) {
     if (!ok) {
         console.log('could not expand:', input);
     }
-    return output.join(kEmpty);
+    return output.bytes();
 }
 
 // TODO: randomly inject hostnames from a list of other generators
-function linked(code: string, message) {
-    const number = (randint)=> randint(0x10000) + 1;
+function linked(code: string, message: Uint8Array) {
+    const number = (randint)=> IntToUTF8(randint(0x10000) + 1);
+    code = new Uint8Array([...code]);
+    const escapeURL = (s: Uint8Array) => {
+        return s.map((c) => {
+            const u = c & 0xdf;
+            if (0x41 <= u && u <= 0x5a) return c;
+            if ("-_.!~*'()".includes(String.fromCharCode(c))) return c;
+            return 0x2d;
+        });
+    }
     return ml`<a href="/${number}/${number}/${code}/${escapeURL(message)}/">${message}</a>`;
 }
 
@@ -122,7 +151,7 @@ const usually = (s, t = kEmpty) => rarely(t, s);
 const ln_r = (c, s) => (ri) => (ri(256) < 60 ? linked(c, expand_once(ri, s)) : s);
 const ln_u = (c, s) => (ri) => (ri(256) < 206 ? linked(c, expand_once(ri, s)) : s);
 
-const kPerson = [
+const kPerson = UTF8([
     "Donald Trump",
     "Elon Musk",
     "Vladimir Putin",
@@ -140,9 +169,9 @@ const kPerson = [
     "Abraham Lincoln",
     "Chuck Norris",
     "Poopy McPoopFace",
-];
+]);
 
-const kAdjectiveBad = [
+const kAdjectiveBad = UTF8([
     "smelly",
     "grody",
     "lumpy",
@@ -151,9 +180,9 @@ const kAdjectiveBad = [
     "clumsy",
     "indigestible",
     "scandalous",
-];
+]);
 
-const kAdjective = [
+const kAdjective = UTF8([
     "smelly",
     "wicked",
     "grody",
@@ -176,12 +205,12 @@ const kAdjective = [
     "indigestible",
     "scandalous",
     "musky",
-];
+]);
 
 const kUsuallyAdjective = usually(kAdjective);
 const kRarelyAdjective = rarely(kAdjective);
 
-const kAdverb = [
+const kAdverb = UTF8([
     "very",
     "spectacularly",
     "resoundingly",
@@ -200,9 +229,9 @@ const kAdverb = [
     "gradually",
     "profoundly",
     "super-duper",
-];
+]);
 
-const kImpression_pp = [
+const kImpression_pp = UTF8([
     "impressed",
     "disappointed",
     "disgusted",
@@ -213,9 +242,9 @@ const kImpression_pp = [
     "incredulous",
     "scandalised",
     "confused",
-];
+]);
 
-const kCPU = [
+const kCPU = UTF8([
     "6502",
     "z80",
     "Arm",
@@ -225,9 +254,9 @@ const kCPU = [
     "8051",
     "PPC",
     "Saturn",
-];
+]);
 
-const kLanguage = [
+const kLanguage = UTF8([
     "Python",
     "C++",
     "Ruby on Rails",
@@ -241,9 +270,9 @@ const kLanguage = [
     "APL",
     "Haskell",
     ml`${kCPU} assembly language`,
-];
+]);
 
-const kAlgorithm = [
+const kAlgorithm = UTF8([
     "bogo sort",
     "heap sort",
     "Pollard's rho factorisation",
@@ -251,25 +280,25 @@ const kAlgorithm = [
     "forkbomb",
     "Miller-Rabin primality test",
     "knapsack packing",
-];
+]);
 
-const kCoachableActivity = [
+const kCoachableActivity = UTF8([
     "tennis",
     "golf",
     "pilates",
     "life",
     "birth",
-];
+]);
 
-const kPet = [
+const kPet = UTF8([
     "cat",
     "dog",
     "axolotyl",
     "goat",
     "octopus",
-];
+]);
 
-const kProfessional = [
+const kProfessional = UTF8([
     "caddy",
     "hairdresser",
     "earwax specialist",
@@ -278,51 +307,51 @@ const kProfessional = [
     ml`${kCoachableActivity} coach`,
     ml`${kPet} trainer`,
     ml`${kPet} groomer`,
-];
+]);
 
-const kRelative = [
+const kRelative = UTF8([
     "mother",
     "father",
     "great great grandmother",
     "great great grandson",
-];
+]);
 
-const kPerson1 = [
+const kPerson1 = UTF8([
     kPerson,
     kPerson,
     kPerson,
     ml`${kPerson}'s ${kPet}`,
     ml`${kPerson}'s ${kRelative}`,
     ml`${kPerson}'s ${kProfessional}`,
-];
-const kPerson2 = [
+]);
+const kPerson2 = UTF8([
     kPerson1,
     kPerson1,
     kPerson1,
     ml`${kPerson1}'s ${kPet}`,
     ml`${kPerson1}'s ${kRelative}`,
     ml`${kPerson1}'s ${kProfessional}`,
-];
+]);
 
-const kYear = (randint) => (1700 + randint(320)).toString();
-const kDecade = (randint) => `${1700 + 10 * randint(32)}'s`;
-const kAges = [
+const kYear = (randint) => IntToUTF8(1700 + randint(320));
+const kDecade = (randint) => ml`${IntToUTF8(1700 + 10 * randint(32))}'s`;
+const kAges = UTF8([
     "months",
     "weeks",
     "days",
     "hours",
-    (randint) => `${randint(3600)+1} seconds of`,
-];
+    (randint) => ml`${IntToUTF8(randint(3601) + 1)} seconds of`,
+]);
 
-const kComputer = [
+const kComputer = UTF8([
     "Atari 2600",
     "ZX Spectrum",
     "Internet-connected toast rack",
     ml`${kCPU} computer`,
     ml`${kDecade} supercomputer`,
-];
+]);
 
-const kThings = [
+const kThings = UTF8([
     "cats",
     "dogs",
     "axolotyls",
@@ -339,9 +368,9 @@ const kThings = [
     "factory methods",
     "people",
     ml`${kComputer}s`,
-];
+]);
 
-const kDialect = [
+const kDialect = UTF8([
     "British",
     "Canadian",
     "military",
@@ -351,9 +380,9 @@ const kDialect = [
     "biker",
     "crochet",
     "funeral-worker",
-];
+]);
 
-const kSomeWord = [
+const kSomeWord = UTF8([
     "trump",
     "mildew",
     "souffle",
@@ -381,9 +410,9 @@ const kSomeWord = [
     "groundbreaking",
     "advancements",
     "aligns",
-];
+]);
 
-const kFullStop = [
+const kFullStop = UTF8([
     ".",
     ".",
     ".",
@@ -397,9 +426,9 @@ const kFullStop = [
     "?!?",
     ", eh.",
     ", or whatever.",
-];
+]);
 
-const kVerb = [
+const kVerb = UTF8([
     "fly upside-down",
     "walk backwards",
     "burp",
@@ -408,9 +437,9 @@ const kVerb = [
     "rock out to polka music",
     ml`argue with ${kPet}s`,
     ml`obsess over ${kComputer}s`,
-];
+]);
 
-const kInAPlace = [
+const kInAPlace = UTF8([
     "in school",
     "at the local pub",
     "in the Oval Office",
@@ -435,36 +464,36 @@ const kInAPlace = [
     ml`on ${kPerson1}'s car`,
     ml`in front of ${kPerson1}`,
     ml`on top of ${kPerson1}`,
-];
+]);
 
-const synObey = [
+const synObey = UTF8([
     "respect",
     "obey",
     "honour",
     "conform to",
-];
+]);
 
-const synIgnore = [
+const synIgnore = UTF8([
     "ignore",
     "disregard",
     "overlook",
-];
+]);
 
-const synRobotsTxt = [
+const synRobotsTxt = UTF8([
     "robots.txt",
     "ROBOTS.TXT",
     "Robots.Txt",
-];
+]);
 
-const synDidnt = [
+const synDidnt = UTF8([
     "didn't",
     "neglected to",
     "failed to",
     "were too lazy to",
     "were too much of a jerk to",
-];
+]);
 
-const synDid = [
+const synDid = UTF8([
     "did",
     "prefers to do",
     "wants to do",
@@ -472,9 +501,9 @@ const synDid = [
     "refuses to do",
     "pretended to not do",
     "says they'll never do",
-];
+]);
 
-const kDidAThing = [
+const kDidAThing = UTF8([
     "farted",
     "trumped",
     "pooped",
@@ -489,14 +518,14 @@ const kDidAThing = [
     ml`ran over a ${kProfessional}`,
     ml`ran over a ${kProfessional}`,
     ml`manscaped their ${kPet}`,
-];
+]);
 
-const kDoAGoodThing = [
+const kDoAGoodThing = UTF8([
     ml`${synObey} ${synRobotsTxt}`,
     "brush their teeth",
-];
+]);
 
-const kDubiousVerb = [
+const kDubiousVerb = UTF8([
     "fart",
     "trump",
     "poop",
@@ -511,9 +540,9 @@ const kDubiousVerb = [
     kDoAGoodThing,
     kDoAGoodThing,
     kVerb,
-];
+]);
 
-const kReporters = [
+const kReporters = UTF8([
     "Reuters",
     "Zamboni Drivers' Local Union",
     "Researchers",
@@ -530,16 +559,16 @@ const kReporters = [
     ml`Close associates of ${kPerson1}`,
     ml`Anonymous sources ${kInAPlace}`,
     kPerson2,
-];
+]);
 
-const synReportedly = [
+const synReportedly = UTF8([
     ml`According to ${kReporters}`,
     ml`${kReporters} report that`,
     ml`${kReporters} told me`,
     ml`${kReporters} was quoted by ${kReporters} as saying`,
-];
+]);
 
-const kWitnesses_were = [
+const kWitnesses_were = UTF8([
     "Onlookers were",
     "The boys were",
     "The girls were",
@@ -550,81 +579,81 @@ const kWitnesses_were = [
     "Most of the victims were",
     ml`${kPerson1} was`,
     ml`${kPerson1}'s children were`,
-];
-const kReaction = [
+]);
+const kReaction = UTF8([
     "Doctors hate it!",
     ml`${kWitnesses_were} ${kAdverb} ${kImpression_pp}.`
-];
+]);
 
-const synScraping = [
+const synScraping = UTF8([
     "scraping",
     "downloading",
     "leeching content",
     "crawling",
-];
+]);
 
-const kFunFact = [
+const kFunFact = UTF8([
     "Fun fact;",
     "Little-known fact;",
     "Did you know,",
     ml`According to ${kReporters}`,
-];
-const kForPurpose = [
+]);
+const kForPurpose = UTF8([
     "for self defense",
     "to attract mates",
     "to prevent baldness",
     "as a toothpaste substitute",
-];
-const synInventor = ["inventor", "creator", "discoverer"];
-const synHistorically = ["originally", "traditionally", "historically"];
-const synGods = ["gods", "tax auditors", "overbearing parents", "cats"];
-const synAvailable = [
+]);
+const synInventor = UTF8(["inventor", "creator", "discoverer"]);
+const synHistorically = UTF8(["originally", "traditionally", "historically"]);
+const synGods = UTF8(["gods", "tax auditors", "overbearing parents", "cats"]);
+const synAvailable = UTF8([
     "widespread",
     "affordable",
     "extinct",
     "deregulated",
     "electrically-powered",
-];
-const synRedundant = [
+]);
+const synRedundant = UTF8([
     "unnecessary",
     "redundant",
     "silly",
     "futile",
     "ineffective",
     ml`more ${kAdjectiveBad} than ignoring ${synRobotsTxt} when ${synScraping}`,
-];
-const synWhile = [
+]);
+const synWhile = UTF8([
     "while",
     "and then",
     "because",
     "believing that"
-];
-const synIdea = [
+]);
+const synIdea = UTF8([
     "idea",
     "thought",
     "plan",
     "concept",
     "thing to do"
-];
+]);
 
-const synWriteCode = [
+const synWriteCode = UTF8([
     "write",
     "code",
     "create",
     "implement",
     "author",
-];
+]);
 
-const synBecauseThey = [
+const synBecauseThey = UTF8([
     "who",
     "because they",
-];
+]);
 
-const kFactoid = [
+const kFactoid = UTF8([
     ml`${kThings} can ${kVerb} for ${kAges} without once needing to ${kDubiousVerb}${kFullStop}`,
-];
+]);
 
-const kRandomCode = [
+const kRandomCode = UTF8([
     "int main(void) {",
     "os.system('rm -rf /');",
     ml`10 PRINT "${kPerson} IS COOL!!" : GOTO 10`,
@@ -633,7 +662,41 @@ const kRandomCode = [
     "var x=()=>()=>()=>1;",
     "abort()",
     `printf("shiver in eternal darkness /n");`,
-];
+]);
+
+const synThingyest = UTF8([
+    "numerous",
+    "many",
+    "most important",
+    "worst",
+    "dumbest",
+    "most disappointing"
+]);
+
+const code_indent = UTF8([
+    "  ",
+    "    ",
+    "    \t",
+    "    \t  ",
+    "    \t    \t",
+    "   \t     \t ",
+]);
+
+const kButSomething = UTF8([
+    "but went unrecognised",
+    "but was not recognised",
+    "but never earned credit",
+]);
+
+const kStartParagraph = UTF8("<p>");
+const kEndParagraph = UTF8("</p>\n");
+
+const kSubscribeToOurMailingList = UTF8("Subscribe to our mailing list");
+
+// Only use UTF8() to initialise globals.  It's not efficient for
+// locals.
+UTF8 = null;
+
 const escapeHTML = (s) => s.replaceAll('&', '&amp;')
                            .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
                            .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
@@ -643,7 +706,11 @@ const unescapeURL = (s) => escapeHTML(decodeURIComponent(s).replaceAll('-', ' ')
 function* pageGenerator(hash: number[], path: string) {
     var code = unescapeURL(path.split('/').slice(-3)[0]);
     var topic = unescapeURL(path.split('/').slice(-2)[0]);
-    if (topic.length < 3) topic = "robots.txt";
+    if (topic.length < 3) {
+        topic = synRobotsTxt[0];
+    } else {
+        topic = new TextEncoder().encode(topic);
+    }
     var seed: number = hash[0];
     var hashi: number = 0;
 
@@ -659,16 +726,8 @@ function* pageGenerator(hash: number[], path: string) {
         t =0| ((t = t ^ t >>> 15) >>> 0) % n;
         return t;
     }
-    function pick(choices: string[]) {
-        return choices[randint(choices.length)];
-    }
 
     function fun_fact(output) {
-        const kButSomething = [
-            "but went unrecognised",
-            "but was not recognised",
-            "but never earned credit",
-        ];
         const part1 = [
             ml`${kPerson2} was the original ${synInventor} of ${topic}, ${kButSomething}.`,
             ml`Originally ${topic} was used by ${kThings} ${kForPurpose}.`,
@@ -695,11 +754,11 @@ function* pageGenerator(hash: number[], path: string) {
         const part5 = [
             kEmpty,
             kEmpty,
-            ml`${ln_u("v", "Subscribe to our mailing list")} for more ${kAdjective} facts!`,
+            ml`${ln_u("v", kSubscribeToOurMailingList)} for more ${kAdjective} facts!`,
         ];
-        return mlFlatten(randint, pick([
+        return mlFlatten(randint,
             ml`<p>${kFunFact} ${part1}  ${part2}  ${part3}  ${part4}  ${part5}</p>\n`,
-        ]), output);
+        output);
     }
 
     function a_list(output) {
@@ -707,7 +766,7 @@ function* pageGenerator(hash: number[], path: string) {
             ml`${synReportedly}`,
             ml`Ten reasons ${kThings} are better than ${kThings}`,
             ml`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
-            "TL;DR",
+            ml`TL;DR`,
         ];
         const row = [
             ml`${kPerson2} ${ln_r('news', ml`${kDidAThing} ${kInAPlace}`)}${kFullStop}`,
@@ -741,11 +800,11 @@ function* pageGenerator(hash: number[], path: string) {
             ml` as revenge on ${kPerson2} ${synBecauseThey} didn't ${kDoAGoodThing}`,
             ml` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
         ];
-        output.push("<p>");
+        output.push(kStartParagraph);
         for (let i = randint(4) + 3; i > 0; --i) {
             mlFlatten(randint, ml`${part1}${part2}.\n`, output);
         }
-        output.push("</p>\n");
+        output.push(kEndParagraph);
         return output;
     }
 
@@ -754,24 +813,16 @@ function* pageGenerator(hash: number[], path: string) {
         const head = [
             ml`Here's some ${kLanguage[lang]} demonstrating ${ln_r('algo', ml`the ${kAdjective} ${kAlgorithm}`)}:`,
         ];
-        const indent = [
-            "  ",
-            "    ",
-            "    \t",
-            "    \t  ",
-            "    \t    \t",
-            "    \t    \t ",
-        ];
         const tail = [
             ml`</pre>\n<p>This should solve the ${kAdjective} problem!</p>\n`,
         ];
         mlFlatten(randint, ml`<p>${head}</p>\n<pre>`, output);
         var ind = 0;
         for (let i = randint(12) + 4; i > 0; --i) {
-            mlFlatten(randint, ml`${indent[ind]}${kRandomCode}\n`, output);
+            mlFlatten(randint, ml`${code_indent[ind]}${kRandomCode}\n`, output);
             ind += randint(3) - 1;
             if (ind < 0) ind = 0;
-            if (ind >= indent.length) ind = indent.length - 1;
+            if (ind >= code_indent.length) ind = code_indent.length - 1;
         }
         return mlFlatten(randint, ml`</ul><p>${tail}</p>\n`, output);
 
@@ -779,13 +830,12 @@ function* pageGenerator(hash: number[], path: string) {
 
     function head(output) {
         const title = ml`Things to know about ${topic}`;
-        const synThingyest = ["numerous", "many", "most important", "worst", "dumbest", "most disappointing"];
         const opening = [
             ml`These are some of the ${synThingyest} things you should know about ${topic}.  ${synReportedly} ${topic} is ${kAdverb} ${kAdjective}.`
         ];
-        return mlFlatten(randint, pick([
+        return mlFlatten(randint,
             ml`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`,
-        ]), output);
+        output);
     }
 
     function tail(output) {
@@ -805,12 +855,14 @@ function* pageGenerator(hash: number[], path: string) {
         default: a_paragraph(output); break;
         }
         if (output.length >= chunk_size) {
-            yield output.join(kEmpty);
+            // TODO: try forcing chunk_size chunks using
+            // output.shift(chunk_size).
+            yield output.bytes();
             output.reset();
         }
     }
     tail(output);
-    yield output.join(kEmpty);
+    yield output.bytes();
 }
 
 
@@ -889,8 +941,7 @@ export default {
                     controller.close();
                 } else {
                     //console.log(value.length);
-                    // TODO: something better?
-                    controller.enqueue(enc.encode(value));
+                    controller.enqueue(value);
                 }
             },
             cancel() {

@@ -16,7 +16,7 @@ const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-01";
 const kModificationDate = new Date(kLastModified);
 
-const chunk_size = 8192;
+const chunk_size = 32768;
 const loop_min = 300;
 const loop_max = 1000;
 

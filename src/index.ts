@@ -16,9 +16,9 @@ const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-01";
 const kModificationDate = new Date(kLastModified);
 
+const debug = true;
 const chunk_size = 32768;
-const loop_min = 300;
-const loop_max = 1000;
+const goal_size = 200000;
 
 var UTF8 = (v) => {
     const utf8enc = new TextEncoder();
@@ -34,21 +34,29 @@ const kEmpty = UTF8("");
 const kOops = UTF8("***OOPS***");
 
 const utf8cache = new WeakMap();
+class mlObject {
+    strings:Uint8Array[] = null;
+    args: object[] = null;
 
-function ml(strings, ...args) {
-    // const badargs = args.some((x) => x === null || x === undefined || typeof x === 'string' || typeof x === 'number');
-    // if (badargs) {
-    //     console.trace(strings, 'bad ml args:', args);
-    // }
-    const UTF8 = (v) => {
-        const utf8enc = new TextEncoder();
-        if (!utf8cache.has(v)) {
-            utf8cache.set(v, v.map((s) => utf8enc.encode(s)));
+    constructor(strings:strings[], args:object[]) {
+        if (debug) {
+            // const badargs = args.some((x) => x === null || x === undefined || typeof x === 'string' || typeof x === 'number');
+            // if (badargs) {
+            //     console.trace(strings, 'bad ml args:', args);
+            // }
         }
-        return utf8cache.get(v);
+        const UTF8 = (v) => {
+            const utf8enc = new TextEncoder();
+            if (!utf8cache.has(v)) {
+                utf8cache.set(v, v.map((s) => utf8enc.encode(s)));
+            }
+            return utf8cache.get(v);
+        }
+        this.strings = UTF8(strings);
+        this.args = args;
     }
-    return { strings: UTF8(strings), args: args };
-}
+};
+const ml = (strings, ...args) => new mlObject(strings, args);
 
 class FixedBuffer {
     data = null;
@@ -63,17 +71,13 @@ class FixedBuffer {
         this.length = 0;
     }
 
-    bytes() {
-        return this.data.subarray(0, this.length);
-    }
-
-    head(n: number) {
-        if (n > this.length) n = this.length;
+    bytes(n: number = null) {
+        if (n === null || n > this.length) n = this.length;
         return this.data.subarray(0, n);
     }
 
     shift(n: number) {
-        assert(n <= this.length);
+        if (n >= this.length) return reset();
         this.data.copyWithin(0, n, this.length);
         this.length -= n;
     }
@@ -94,13 +98,12 @@ function mlFlatten1(randint, value, output: FixedBuffer) {
             value = value[n];
         } else if (typeof value === 'function') {
             value = value(randint);
-        } else {
-            // if (typeof value === 'number' || typeof value === 'string') {
-            //     console.log("value has wrong type:", value, typeof value);
-            //     break;
-            // }
+        } else if (value.type === mlObject.type) {
             mlFlatten(randint, value, output);
             return true;
+        } else {
+            console.log("value has wrong type:", value, value.type);
+            break;
         }
     }
     // This should never happen
@@ -842,12 +845,9 @@ function* pageGenerator(hash: number[], path: string) {
         return mlFlatten(randint, ml`<p>Don't forget to like and subscribe!</p>\n</body></html>`, output);
     }
 
-    var output = new FixedBuffer(chunk_size * 2);
-
+    let output = new FixedBuffer(chunk_size * 2);
     head(output);
-    const count = randint(loop_max - loop_min) + loop_min;
-    for (let i = 0; i < count; ++i) {
-        let v;
+    for (let total = 0; total + output.length < goal_size; ) {
         switch (randint(5)) {
         case 0:  fun_fact(output); break;
         case 1:  a_list(output); break;
@@ -855,10 +855,12 @@ function* pageGenerator(hash: number[], path: string) {
         default: a_paragraph(output); break;
         }
         if (output.length >= chunk_size) {
-            // TODO: try forcing chunk_size chunks using
-            // output.shift(chunk_size).
-            yield output.bytes();
-            output.reset();
+            const to_send = Math.min(output.length, chunk_size);
+            const boundary = output.bytes(Math.min(output.length, to_send + 8)).subarray(to_send - 8);
+            console.log('yield:', to_send, '/', output.length, total, 'of', goal_size, `"${new TextDecoder().decode(boundary)}"`);
+            yield output.bytes(to_send);
+            output.shift(to_send);
+            total += to_send;
         }
     }
     tail(output);
@@ -940,7 +942,6 @@ export default {
                 if (done) {
                     controller.close();
                 } else {
-                    //console.log(value.length);
                     controller.enqueue(value);
                 }
             },

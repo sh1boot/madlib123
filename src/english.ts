@@ -2,186 +2,7 @@ const debug = false;
 const chunk_size = 32768;
 const goal_size = 200000;
 
-const utf8cache = new WeakMap();
-class mlObject {
-    strings:Uint8Array[] = null;
-    args: object[] = null;
-
-    constructor(strings:strings[], args:object[]) {
-        if (debug) {
-            const badargs = args.some((x) => x === null || x === undefined || typeof x === 'string');
-            if (badargs) {
-                console.log(strings, 'bad ml args:', args);
-            }
-        }
-        const UTF8 = (v) => {
-            const utf8enc = new TextEncoder();
-            if (!utf8cache.has(v)) {
-                utf8cache.set(v, v.map((s) => utf8enc.encode(s)));
-            }
-            return utf8cache.get(v);
-        }
-        this.strings = UTF8(strings);
-        this.args = args;
-    }
-};
-
-class mlLink {
-    content:mlObject = null;
-    code:string = null;
-    constructor(content:mlObject, code:string) {
-        this.content = content;
-        this.code = code;
-    }
-};
-
-class mlKeyword {
-    keyword:string = null;
-    constructor(keyword:string) {
-        this.keyword = keyword;
-    }
-};
-
-const ml = (strings, ...args) => new mlObject(strings, args);
-const ln_r = (s, c) => (randnum) => ((randnum & 15) < 4 ? new mlLink(s, c) : s);
-const ln_u = (s, c) => (randnum) => ((randnum & 15) < 12 ? new mlLink(s, c) : s);
-const kw = (keyword) => new mlKeyword(keyword);
-
-class mlParser {
-    data:Uint8Array = null;
-    rngextra:Uint32Array = null;
-    rngseed:number = 0;
-    rngindex:number = 0;
-    size:number = 0;
-    length:number = 0;
-    enc:TextEncoder = new TextEncoder();
-    keywords:object = null;
-
-    constructor(keywords:object, hash: Uint32Array, size: number, margin: number = 1024) {
-        this.data = new Uint8Array(size + margin);
-        this.size = size;
-        this.rngextra = hash;
-        this.rngseed = hash[1] ^ hash[2] ^ hash[3];
-        this.keywords = keywords;
-    }
-
-    reset() {
-        this.length = 0;
-    }
-
-    bytes(n: number = null) {
-        if (n === null || n > this.length) n = this.length;
-        return this.data.subarray(0, n);
-    }
-
-    shift(n: number) {
-        if (n >= this.length) return reset();
-        this.data.copyWithin(0, n, this.length);
-        this.length -= n;
-    }
-
-    rand() {
-        let t: number = (this.rngseed + 0x9e3779b9) >>> 0;
-        this.rngseed = t;
-        t ^= this.rngextra[this.rngindex];
-        this.rngindex = (this.rngindex + 1) & 7;
-        t ^= t >>> 16;
-        t = Math.imul(t, 0x21f0aaad);
-        t ^= t >>> 15;
-        t = Math.imul(t, 0x735a2d97);
-        return (t ^ t >>> 15) >>> 1;  // TODO: see if 31-bit result actually helps performance
-    }
-
-    randint(n: number) {
-        const r = this.rand();
-        return r % n;
-    }
-
-    push(value) {
-        while (!(value === null || value === undefined)) {
-            // TODO: surely there's a better way!
-            if (value instanceof Uint8Array) {
-                if (value.length) this.#pushUTF8(value);
-                return true;
-            } else if (Array.isArray(value)) {
-                let n = this.randint(value.length);
-                value = value[n];
-            } else if (typeof value === 'number') {
-                this.#pushNumber(value);
-                return true;
-            } else if (value instanceof mlKeyword) {
-                value = this.keywords[value.keyword];
-            } else if (typeof value === 'function') {
-                value = value(this.rand());
-            } else if (value instanceof mlObject) {
-                this.#pushMlTemplate(value);
-                return true;
-            } else if (value instanceof mlLink) {
-                this.#pushLink(value);
-                return true;
-            } else {
-                console.log("value has wrong type:", value);
-                break;
-            }
-        }
-        // This should never happen
-        console.log("fell out of expansion loop with value", value);
-        this.#pushString("***OOPS***");
-        return false;
-    }
-
-    #pushMlTemplate(input) {
-        this.#pushUTF8(input.strings[0]);
-        input.args.forEach((arg, i) => {
-            this.push(arg);
-            this.#pushUTF8(input.strings[i + 1]);
-        });
-    }
-
-    #pushUTF8(value: Uint8Array) {
-        this.data.set(value, this.length);
-        this.length += value.length;
-    }
-
-    #pushNumber(n:number) {
-        this.length += this.enc.encodeInto(n.toString(), this.data.subarray(this.length)).written;
-    }
-    #pushChar(c:string) {
-        this.data[this.length++] = c.charCodeAt();
-    }
-    #pushString(s:string) {
-        this.length += this.enc.encodeInto(s, this.data.subarray(this.length)).written;
-    }
-    #pushLink(obj) {
-        // TODO: randomly inject hostnames from a list of other generators
-        this.#pushString('<a href="/');
-        this.#pushNumber(this.rand() & 0xffff);
-        this.#pushChar('/');
-        this.#pushNumber(this.rand() & 0xffff);
-        this.#pushChar('/');
-        if (obj.code) {
-            this.#pushString(obj.code);
-            this.#pushChar('/');
-        }
-        const start = this.length;
-        this.push(obj.content);
-        const stop = this.length;
-        this.#pushString('/">');
-        const urlsafe = (c: number) => {
-            if (c >= 128) return c;  // assume UTF-8 coding is clean
-            const u = c & 0xdf;
-            if (0x41 <= u && u <= 0x5a) return c;
-            if ("-_.!~*'()".includes(String.fromCharCode(c))) return c;
-            return 0x2d;
-        }
-        for (let i = start; i < stop; ++i) {
-            let c = this.data[i];
-            this.data[this.length++] = c;
-            this.data[i] = urlsafe(c);
-        }
-        this.#pushString('</a>');
-    }
-}
+import {ml, kw, ln_r, ln_u, mlParser } from './madlib.ts';
 
 var UTF8 = (v) => {
     const utf8enc = new TextEncoder();
@@ -740,12 +561,121 @@ const kSubscribeToOurMailingList = UTF8("Subscribe to our mailing list");
 // locals.
 UTF8 = null;
 
-const escapeHTML = (s) => s.replaceAll('&', '&amp;')
-                           .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-                           .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
-const unescapeURL = (s) => escapeHTML(decodeURIComponent(s).replaceAll('-', ' '));
+function fun_fact(output) {
+    const part1 = [
+        ml`${kPerson2} was the original ${synInventor} of ${kw('topic')}, ${kButSomething}.`,
+        ml`Originally ${kw('topic')} was used by ${kThings} ${kForPurpose}.`,
+        ml`The ${kw('topic')} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
+        ml`In ${kDialect} slang, the word "${kSomeWord}" actually means to ${kDubiousVerb}.`,
+        kFactoid,
+    ];
+    const part2 = [
+        ml`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
+        ml`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.`,
+        ml`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.`,
+    ];
+    const part3 = [
+        kEmpty,
+        ml`To this day most ${kThings} remain ${kAdjective}.`,
+        ml`Only ${kPerson2} has ever successfully made this work ${kForPurpose}.`,
+    ];
+    const part4 = [
+        kEmpty,
+        ml`This is why they have always respected ${synRobotsTxt} until this very day!`,
+        ml`After that they never forgot to check ${synRobotsTxt} before ${synScraping} websites.`,
+        ml`And all because they ${synDidnt} ${kDoAGoodThing}.`,
+    ];
+    const part5 = [
+        kEmpty,
+        kEmpty,
+        ml`${ln_u(kSubscribeToOurMailingList, 'action')} for more ${kAdjective} facts!`,
+    ];
+    return output.push(ml`<p>${kFunFact} ${part1}  ${part2}  ${part3}  ${part4}  ${part5}</p>\n`);
+}
+
+function a_list(output) {
+    const head = [
+        ml`${synReportedly}`,
+        ml`Ten reasons ${kThings} are better than ${kThings}`,
+        ml`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
+        ml`TL;DR`,
+    ];
+    const row = [
+        ml`${kPerson2} ${ln_r(ml`${kDidAThing} ${kInAPlace}`, 'news')}${kFullStop}`,
+        kFactoid,
+    ];
+    const tail = [
+        kReaction,
+    ];
+    output.push(ml`<p>${head}:</p><ul>\n`);
+    for (let i = output.randint(12) + 4; i > 0; --i) {
+        output.push(ml`<li>${row}</li>\n`);
+    }
+    return output.push(ml`</ul><p>${tail}</p>\n`);
+}
+
+function a_paragraph(output) {
+    const part1 = [
+        ml`${synReportedly}, ${kInAPlace}, ${kPerson1} ${kDidAThing}`,
+        ml`${ln_r(kPerson1, 'p')} saw ${kPerson2} ${ln_r(ml`${kDubiousVerb} ${kInAPlace}`, 'howto')}`,
+        ml`${ln_r(kPerson2, 'p')} implemented a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')} in ${kLanguage}`,
+        ml`It took ${ln_r(kPerson2, 'p')} ${kAges} to ${synWriteCode} a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')}`,
+        ml`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
+    ];
+    const part2 = [
+        kEmpty,
+        kEmpty,
+        ml` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for`,
+        ml` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
+        ml` and then blamed it on ${kPerson}`,
+        ml` using a ${kComputer}`,
+        ml` as revenge on ${kPerson2} ${synBecauseThey} didn't ${kDoAGoodThing}`,
+        ml` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
+    ];
+    output.push(kStartParagraph);
+    for (let i = output.randint(4) + 3; i > 0; --i) {
+        output.push(ml`${part1}${part2}.\n`);
+    }
+    output.push(kEndParagraph);
+    return output;
+}
+
+function example_code(output) {
+    const lang = output.randint(kLanguage.length);
+    const head = [
+        ml`Here's some ${kLanguage[lang]} demonstrating ${ln_r(ml`the ${kAdjective} ${kAlgorithm}`, 'also')}:`,
+    ];
+    const tail = [
+        ml`</pre>\n<p>This should solve the ${kAdjective} problem!</p>\n`,
+    ];
+    output.push(ml`<p>${head}</p>\n<pre>`);
+    var ind = 0;
+    for (let i = output.randint(12) + 4; i > 0; --i) {
+        output.push(ml`${kCodeIndent[ind]}${kRandomCode}\n`);
+        ind += output.randint(3) - 1;
+        if (ind < 0) ind = 0;
+        if (ind >= kCodeIndent.length) ind = kCodeIndent.length - 1;
+    }
+    return output.push(ml`</ul><p>${tail}</p>\n`);
+}
+
+function head(output) {
+    const title = ml`Things to know about ${kw('topic')}`;
+    const opening = [
+        ml`These are some of the ${synThingyest} things you should know about ${kw('topic')}.  ${synReportedly} ${kw('topic')} is ${kAdverb} ${kAdjective}.`
+    ];
+    return output.push(ml`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`);
+}
+
+function tail(output) {
+    return output.push(ml`<p>Don't forget to like and subscribe!</p>\n</body></html>`);
+}
 
 export function* pageGenerator(hash: number[], path: string) {
+    const escapeHTML = (s) => s.replaceAll('&', '&amp;')
+                            .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+                            .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+    const unescapeURL = (s) => escapeHTML(decodeURIComponent(s).replaceAll('-', ' '));
     var code = unescapeURL(path.split('/').slice(-3)[0]);
     var topic = unescapeURL(path.split('/').slice(-2)[0]);
     if (topic.length < 3) {
@@ -754,117 +684,9 @@ export function* pageGenerator(hash: number[], path: string) {
         topic = new TextEncoder().encode(topic);
     }
 
-    function fun_fact(output) {
-        const part1 = [
-            ml`${kPerson2} was the original ${synInventor} of ${kw('topic')}, ${kButSomething}.`,
-            ml`Originally ${kw('topic')} was used by ${kThings} ${kForPurpose}.`,
-            ml`The ${kw('topic')} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
-            ml`In ${kDialect} slang, the word "${kSomeWord}" actually means to ${kDubiousVerb}.`,
-            kFactoid,
-        ];
-        const part2 = [
-            ml`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
-            ml`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.`,
-            ml`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.`,
-        ];
-        const part3 = [
-            kEmpty,
-            ml`To this day most ${kThings} remain ${kAdjective}.`,
-            ml`Only ${kPerson2} has ever successfully made this work ${kForPurpose}.`,
-        ];
-        const part4 = [
-            kEmpty,
-            ml`This is why they have always respected ${synRobotsTxt} until this very day!`,
-            ml`After that they never forgot to check ${synRobotsTxt} before ${synScraping} websites.`,
-            ml`And all because they ${synDidnt} ${kDoAGoodThing}.`,
-        ];
-        const part5 = [
-            kEmpty,
-            kEmpty,
-            ml`${ln_u(kSubscribeToOurMailingList, 'action')} for more ${kAdjective} facts!`,
-        ];
-        return output.push(ml`<p>${kFunFact} ${part1}  ${part2}  ${part3}  ${part4}  ${part5}</p>\n`);
-    }
-
-    function a_list(output) {
-        const head = [
-            ml`${synReportedly}`,
-            ml`Ten reasons ${kThings} are better than ${kThings}`,
-            ml`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
-            ml`TL;DR`,
-        ];
-        const row = [
-            ml`${kPerson2} ${ln_r(ml`${kDidAThing} ${kInAPlace}`, 'news')}${kFullStop}`,
-            kFactoid,
-        ];
-        const tail = [
-            kReaction,
-        ];
-        output.push(ml`<p>${head}:</p><ul>\n`);
-        for (let i = output.randint(12) + 4; i > 0; --i) {
-            output.push(ml`<li>${row}</li>\n`);
-        }
-        return output.push(ml`</ul><p>${tail}</p>\n`);
-    }
-
-    function a_paragraph(output) {
-        const part1 = [
-            ml`${synReportedly}, ${kInAPlace}, ${kPerson1} ${kDidAThing}`,
-            ml`${ln_r(kPerson1, 'p')} saw ${kPerson2} ${ln_r(ml`${kDubiousVerb} ${kInAPlace}`, 'howto')}`,
-            ml`${ln_r(kPerson2, 'p')} implemented a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')} in ${kLanguage}`,
-            ml`It took ${ln_r(kPerson2, 'p')} ${kAges} to ${synWriteCode} a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')}`,
-            ml`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
-        ];
-        const part2 = [
-            kEmpty,
-            kEmpty,
-            ml` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for`,
-            ml` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
-            ml` and then blamed it on ${kPerson}`,
-            ml` using a ${kComputer}`,
-            ml` as revenge on ${kPerson2} ${synBecauseThey} didn't ${kDoAGoodThing}`,
-            ml` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
-        ];
-        output.push(kStartParagraph);
-        for (let i = output.randint(4) + 3; i > 0; --i) {
-            output.push(ml`${part1}${part2}.\n`);
-        }
-        output.push(kEndParagraph);
-        return output;
-    }
-
-    function example_code(output) {
-        const lang = output.randint(kLanguage.length);
-        const head = [
-            ml`Here's some ${kLanguage[lang]} demonstrating ${ln_r(ml`the ${kAdjective} ${kAlgorithm}`, 'also')}:`,
-        ];
-        const tail = [
-            ml`</pre>\n<p>This should solve the ${kAdjective} problem!</p>\n`,
-        ];
-        output.push(ml`<p>${head}</p>\n<pre>`);
-        var ind = 0;
-        for (let i = output.randint(12) + 4; i > 0; --i) {
-            output.push(ml`${kCodeIndent[ind]}${kRandomCode}\n`);
-            ind += output.randint(3) - 1;
-            if (ind < 0) ind = 0;
-            if (ind >= kCodeIndent.length) ind = kCodeIndent.length - 1;
-        }
-        return output.push(ml`</ul><p>${tail}</p>\n`);
-    }
-
-    function head(output) {
-        const title = ml`Things to know about ${kw('topic')}`;
-        const opening = [
-            ml`These are some of the ${synThingyest} things you should know about ${kw('topic')}.  ${synReportedly} ${kw('topic')} is ${kAdverb} ${kAdjective}.`
-        ];
-        return output.push(ml`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`);
-    }
-
-    function tail(output) {
-        return output.push(ml`<p>Don't forget to like and subscribe!</p>\n</body></html>`);
-    }
 
     let output = new mlParser({topic: topic}, hash, chunk_size * 2);
+
     head(output);
     let total = 0;
     while (total + output.length < goal_size) {
@@ -888,6 +710,7 @@ export function* pageGenerator(hash: number[], path: string) {
         }
     }
     tail(output);
+
     if (debug) {
         const dec = (s) => new TextDecoder().decode(s).replaceAll(/[\u0000-\u001f\u007f-\u009f]/g, '.');
         const leader = dec(output.bytes(16));

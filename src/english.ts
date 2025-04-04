@@ -2,19 +2,6 @@ const debug = false;
 const chunk_size = 32768;
 const goal_size = 200000;
 
-var UTF8 = (v) => {
-    const utf8enc = new TextEncoder();
-    if (typeof v === 'string') return utf8enc.encode(v);
-    return v.map((s) => (typeof s === 'string') ? utf8enc.encode(s) : s);
-};
-
-const IntToUTF8 = (n:number, base:number = 10) => {
-    return new TextEncoder().encode(n.toString(base));
-};
-
-const kEmpty = UTF8("");
-const kOops = UTF8("***OOPS***");
-
 const utf8cache = new WeakMap();
 class mlObject {
     strings:Uint8Array[] = null;
@@ -22,7 +9,7 @@ class mlObject {
 
     constructor(strings:strings[], args:object[]) {
         if (debug) {
-            const badargs = args.some((x) => x === null || x === undefined || typeof x === 'string' || typeof x === 'number');
+            const badargs = args.some((x) => x === null || x === undefined || typeof x === 'string');
             if (badargs) {
                 console.log(strings, 'bad ml args:', args);
             }
@@ -38,7 +25,6 @@ class mlObject {
         this.args = args;
     }
 };
-const ml = (strings, ...args) => new mlObject(strings, args);
 
 class mlLink {
     content:mlObject = null;
@@ -48,7 +34,6 @@ class mlLink {
         this.code = code;
     }
 };
-const linked = (content, code) => new mlLink(content, code);
 
 class mlKeyword {
     keyword:string = null;
@@ -56,6 +41,10 @@ class mlKeyword {
         this.keyword = keyword;
     }
 };
+
+const ml = (strings, ...args) => new mlObject(strings, args);
+const ln_r = (s, c) => (randnum) => ((randnum & 15) < 4 ? new mlLink(s, c) : s);
+const ln_u = (s, c) => (randnum) => ((randnum & 15) < 12 ? new mlLink(s, c) : s);
 const kw = (keyword) => new mlKeyword(keyword);
 
 class mlParser {
@@ -68,7 +57,7 @@ class mlParser {
     enc:TextEncoder = new TextEncoder();
     keywords:object = null;
 
-    constructor(keywords:object, hash: Uint32Array, size: number = chunk_size, margin: number = 1024) {
+    constructor(keywords:object, hash: Uint32Array, size: number, margin: number = 1024) {
         this.data = new Uint8Array(size + margin);
         this.size = size;
         this.rngextra = hash;
@@ -100,7 +89,7 @@ class mlParser {
         t = Math.imul(t, 0x21f0aaad);
         t ^= t >>> 15;
         t = Math.imul(t, 0x735a2d97);
-        return (t ^ t >>> 15) >>> 0;
+        return (t ^ t >>> 15) >>> 1;  // TODO: see if 31-bit result actually helps performance
     }
 
     randint(n: number) {
@@ -110,12 +99,16 @@ class mlParser {
 
     push(value) {
         while (!(value === null || value === undefined)) {
+            // TODO: surely there's a better way!
             if (value instanceof Uint8Array) {
                 if (value.length) this.#pushUTF8(value);
                 return true;
             } else if (Array.isArray(value)) {
                 let n = this.randint(value.length);
                 value = value[n];
+            } else if (typeof value === 'number') {
+                this.#pushNumber(value);
+                return true;
             } else if (value instanceof mlKeyword) {
                 value = this.keywords[value.keyword];
             } else if (typeof value === 'function') {
@@ -133,7 +126,7 @@ class mlParser {
         }
         // This should never happen
         console.log("fell out of expansion loop with value", value);
-        this.#pushUTF8(kOops);
+        this.#pushString("***OOPS***");
         return false;
     }
 
@@ -166,8 +159,10 @@ class mlParser {
         this.#pushChar('/');
         this.#pushNumber(this.rand() & 0xffff);
         this.#pushChar('/');
-        this.#pushString(obj.code);
-        this.#pushChar('/');
+        if (obj.code) {
+            this.#pushString(obj.code);
+            this.#pushChar('/');
+        }
         const start = this.length;
         this.push(obj.content);
         const stop = this.length;
@@ -188,12 +183,17 @@ class mlParser {
     }
 }
 
-// TODO: optimise these a bit.
+var UTF8 = (v) => {
+    const utf8enc = new TextEncoder();
+    if (typeof v === 'string') return utf8enc.encode(v);
+    return v.map((s) => (typeof s === 'string') ? utf8enc.encode(s) : s);
+};
+
+const kEmpty = UTF8("");
+
 const rarely = (s, t = kEmpty) => [ s, t, t, t ];
 const evenly = (s, t = kEmpty) => [ s, t ];
 const usually = (s, t = kEmpty) => rarely(t, s);
-const ln_r = (s, c) => (randnum) => ((randnum & 255) < 60 ? linked(s, c) : s);
-const ln_u = (s, c) => (randnum) => ((randnum % 255) < 206 ? linked(s, c) : s);
 
 const kPerson = UTF8([
     "Donald Trump",
@@ -376,14 +376,14 @@ const kPerson2 = UTF8([
     ml`${kPerson1}'s ${kProfessional}`,
 ]);
 
-const kYear = (randnum) => IntToUTF8(1700 + (randnum % 320));
-const kDecade = (randnum) => ml`${IntToUTF8(1700 + 10 * (randnum % 32))}'s`;
+const kYear = (randnum) => 1700 + (randnum % 320);
+const kDecade = (randnum) => ml`${170 + (randnum % 32)}0's`;
 const kAges = UTF8([
     "months",
     "weeks",
     "days",
     "hours",
-    (randnum) => ml`${IntToUTF8((randnum % 3601) + 1)} seconds of`,
+    (randnum) => ml`${(randnum % 3601) + 1} seconds`,
 ]);
 
 const kComputer = UTF8([

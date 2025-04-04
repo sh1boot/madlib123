@@ -86,46 +86,46 @@ class FixedBuffer {
         this.data.set(value, this.length);
         this.length += value.length;
     }
-}
 
-function mlFlatten1(randint, value, output: FixedBuffer) {
-    while (!(value === null || value === undefined)) {
-        if (value instanceof Uint8Array) {
-            output.push(value);
-            return true;
-        } else if (Array.isArray(value)) {
-            let n = randint(value.length);
-            value = value[n];
-        } else if (typeof value === 'function') {
-            value = value(randint);
-        } else if (value.type === mlObject.type) {
-            mlFlatten(randint, value, output);
-            return true;
-        } else {
-            console.log("value has wrong type:", value, value.type);
-            break;
+    mlFlatten1(randint, value) {
+        while (!(value === null || value === undefined)) {
+            if (value instanceof Uint8Array) {
+                this.push(value);
+                return true;
+            } else if (Array.isArray(value)) {
+                let n = randint(value.length);
+                value = value[n];
+            } else if (typeof value === 'function') {
+                value = value(randint);
+            } else if (value.type === mlObject.type) {
+                this.mlFlatten(randint, value);
+                return true;
+            } else {
+                console.log("value has wrong type:", value, value.type);
+                break;
+            }
         }
+        // This should never happen
+        this.push(kOops);
+        return false;
     }
-    // This should never happen
-    output.push(kOops);
-    return false;
-}
 
-function mlFlatten(randint, input, output:FixedBuffer) {
-    output.push(input.strings[0]);
-    input.args.forEach((arg, i) => {
-        var ok = mlFlatten1(randint, arg, output);
-        if (!ok) {
-            console.log("undefined value:", arg, i, input.args);
-        }
-        output.push(input.strings[i + 1]);
-    });
-    return output;
+    mlFlatten(randint, input) {
+        this.push(input.strings[0]);
+        input.args.forEach((arg, i) => {
+            var ok = this.mlFlatten1(randint, arg, this);
+            if (!ok) {
+                console.log("undefined value:", arg, i, input.args);
+            }
+            this.push(input.strings[i + 1]);
+        });
+        return this;
+    }
 }
 
 function expand_once(randint, input) {
     var output = new FixedBuffer(256);
-    let ok = mlFlatten1(randint, input, output);
+    let ok = output.mlFlatten1(randint, input);
     if (!ok) {
         console.log('could not expand:', input);
     }
@@ -135,7 +135,7 @@ function expand_once(randint, input) {
 // TODO: randomly inject hostnames from a list of other generators
 function linked(code: string, message: Uint8Array) {
     const number = (randint)=> IntToUTF8(randint(0x10000) + 1);
-    code = new Uint8Array([...code]);
+    code = new Uint8Array([...code].map((s)=>s.charCodeAt()));
     const escapeURL = (s: Uint8Array) => {
         return s.map((c) => {
             const u = c & 0xdf;
@@ -759,9 +759,8 @@ function* pageGenerator(hash: number[], path: string) {
             kEmpty,
             ml`${ln_u("v", kSubscribeToOurMailingList)} for more ${kAdjective} facts!`,
         ];
-        return mlFlatten(randint,
-            ml`<p>${kFunFact} ${part1}  ${part2}  ${part3}  ${part4}  ${part5}</p>\n`,
-        output);
+        return output.mlFlatten(randint,
+            ml`<p>${kFunFact} ${part1}  ${part2}  ${part3}  ${part4}  ${part5}</p>\n`);
     }
 
     function a_list(output) {
@@ -778,11 +777,11 @@ function* pageGenerator(hash: number[], path: string) {
         const tail = [
             kReaction,
         ];
-        mlFlatten(randint, ml`<p>${head}:</p><ul>\n`, output);
+        output.mlFlatten(randint, ml`<p>${head}:</p><ul>\n`);
         for (let i = randint(12) + 4; i > 0; --i) {
-            mlFlatten(randint, ml`<li>${row}</li>\n`, output);
+            output.mlFlatten(randint, ml`<li>${row}</li>\n`);
         }
-        return mlFlatten(randint, ml`</ul><p>${tail}</p>\n`, output);
+        return output.mlFlatten(randint, ml`</ul><p>${tail}</p>\n`);
     }
 
     function a_paragraph(output) {
@@ -805,7 +804,7 @@ function* pageGenerator(hash: number[], path: string) {
         ];
         output.push(kStartParagraph);
         for (let i = randint(4) + 3; i > 0; --i) {
-            mlFlatten(randint, ml`${part1}${part2}.\n`, output);
+            output.mlFlatten(randint, ml`${part1}${part2}.\n`);
         }
         output.push(kEndParagraph);
         return output;
@@ -819,15 +818,15 @@ function* pageGenerator(hash: number[], path: string) {
         const tail = [
             ml`</pre>\n<p>This should solve the ${kAdjective} problem!</p>\n`,
         ];
-        mlFlatten(randint, ml`<p>${head}</p>\n<pre>`, output);
+        output.mlFlatten(randint, ml`<p>${head}</p>\n<pre>`);
         var ind = 0;
         for (let i = randint(12) + 4; i > 0; --i) {
-            mlFlatten(randint, ml`${code_indent[ind]}${kRandomCode}\n`, output);
+            output.mlFlatten(randint, ml`${code_indent[ind]}${kRandomCode}\n`);
             ind += randint(3) - 1;
             if (ind < 0) ind = 0;
             if (ind >= code_indent.length) ind = code_indent.length - 1;
         }
-        return mlFlatten(randint, ml`</ul><p>${tail}</p>\n`, output);
+        return output.mlFlatten(randint, ml`</ul><p>${tail}</p>\n`);
 
     }
 
@@ -836,13 +835,12 @@ function* pageGenerator(hash: number[], path: string) {
         const opening = [
             ml`These are some of the ${synThingyest} things you should know about ${topic}.  ${synReportedly} ${topic} is ${kAdverb} ${kAdjective}.`
         ];
-        return mlFlatten(randint,
-            ml`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`,
-        output);
+        return output.mlFlatten(randint,
+            ml`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`);
     }
 
     function tail(output) {
-        return mlFlatten(randint, ml`<p>Don't forget to like and subscribe!</p>\n</body></html>`, output);
+        return output.mlFlatten(randint, ml`<p>Don't forget to like and subscribe!</p>\n</body></html>`);
     }
 
     let output = new FixedBuffer(chunk_size * 2);

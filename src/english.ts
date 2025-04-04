@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 const chunk_size = 32768;
 const goal_size = 200000;
 
@@ -866,7 +866,8 @@ export function* pageGenerator(hash: number[], path: string) {
 
     let output = new mlParser({topic: topic}, hash, chunk_size * 2);
     head(output);
-    for (let total = 0; total + output.length < goal_size; ) {
+    let total = 0;
+    while (total + output.length < goal_size) {
         switch (output.randint(5)) {
         case 0:  fun_fact(output); break;
         case 1:  a_list(output); break;
@@ -875,10 +876,11 @@ export function* pageGenerator(hash: number[], path: string) {
         }
         if (output.length >= chunk_size) {
             const to_send = Math.min(output.length, chunk_size);
-            const leader = output.bytes(16);
-            const boundary = output.bytes(Math.min(output.length, to_send + 8)).subarray(to_send - 8);
             if (debug) {
-                console.log('yield:', to_send, '/', output.length, total, 'of', goal_size, `"${new TextDecoder().decode(leader)}"..."${new TextDecoder().decode(boundary)}"`);
+                const dec = (s) => new TextDecoder().decode(s).replaceAll(/[\u0000-\u001f\u007f-\u009f]/g, '.');
+                const leader = dec(output.bytes(16));
+                const boundary = dec(output.bytes(Math.min(output.length, to_send + 8)).subarray(to_send - 8));
+                console.log('yield:', to_send, '/', output.length, total, 'of', goal_size, `"${leader}" ... "${boundary}"`);
             }
             yield output.bytes(to_send);
             output.shift(to_send);
@@ -886,5 +888,11 @@ export function* pageGenerator(hash: number[], path: string) {
         }
     }
     tail(output);
+    if (debug) {
+        const dec = (s) => new TextDecoder().decode(s).replaceAll(/[\u0000-\u001f\u007f-\u009f]/g, '.');
+        const leader = dec(output.bytes(16));
+        const boundary = dec(output.bytes().subarray(Math.max(output.length - 16, 0)));
+        console.log('yield:', output.length, total, 'of', goal_size, 'total:', total + output.length, `"${leader}" ... "${boundary}"`);
+    }
     yield output.bytes();
 }

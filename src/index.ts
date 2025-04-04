@@ -184,11 +184,11 @@ class mlParser {
         this.#pushChar('/');
         this.#pushNumber(this.rand() & 0xffff);
         this.#pushChar('/');
+        this.#pushString(obj.code);
+        this.#pushChar('/');
         const start = this.length;
         this.push(obj.content);
         const stop = this.length;
-        this.#pushChar('/');
-        this.#pushString(obj.code);
         this.#pushString('/">');
         const urlsafe = (c: number) => {
             if (c >= 128) return c;  // assume UTF-8 coding is clean

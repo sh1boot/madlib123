@@ -40,10 +40,23 @@ class mlLink {
     }
 };
 
+class mlRepeat {
+    content:mlObject = null;
+    min:number = 0;
+    max:number = 0;
+    constructor(content:mlObject, min:number, max:number) {
+        this.content = content;
+        this.min = min || 0;
+        this.max = max || min || 10;
+    }
+};
+
 export const ml = (strings, ...args) => new mlObject(strings, args);
 export const kw = (keyword) => new mlKeyword(keyword);
+export const rep = (s, min, max) => new mlRepeat(s, min, max);
 export const ln_r = (s, c) => (randnum) => ((randnum & 15) < 4 ? new mlLink(s, c) : s);
 export const ln_u = (s, c) => (randnum) => ((randnum & 15) < 12 ? new mlLink(s, c) : s);
+// TODO: back(n)
 
 export class mlParser {
     data:Uint8Array = null;
@@ -109,6 +122,12 @@ export class mlParser {
                 return true;
             } else if (value instanceof mlKeyword) {
                 value = this.keywords[value.keyword];
+            } else if (value instanceof mlRepeat) {
+                let n = this.randint(value.max - value.min) + value.min;
+                for (let i = 0; i < n; ++i) {
+                    this.push(value.content);
+                }
+                return true;
             } else if (typeof value === 'function') {
                 value = value(this.rand());
             } else if (value instanceof mlObject) {
@@ -129,6 +148,8 @@ export class mlParser {
     }
 
     #pushMlTemplate(input) {
+        // TODO: keep a list of push stop-start pairs for
+        // use by back-references.
         this.#pushUTF8(input.strings[0]);
         input.args.forEach((arg, i) => {
             this.push(arg);

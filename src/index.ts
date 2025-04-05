@@ -11,6 +11,8 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+const debug = false;
+
 // TODO: pluck this from git metadata or something?
 const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-01";
@@ -130,13 +132,22 @@ export default {
         const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(request.url));
         var hash: number[] = Array.from(new Uint32Array(hashBuffer));
 
+        var total = 0;
         const generator = pageGenerator(hash, url.pathname);
         const stream = new ReadableStream({
             async pull(controller) {
                 const { value, done } = generator.next();
                 if (done) {
+                    console.log("page size:", total);
                     controller.close();
                 } else {
+                    total += value.length;
+                    if (debug) {
+                        const printable = (s) => new TextDecoder().decode(s).replaceAll(/[\u0000-\u001f\u007f-\u009f]/g, '.');
+                        const front = printable(value.subarray(0, Math.min(value.length, 16)));
+                        const back = printable(value.subarray(Math.max(0, value.length - 16)));
+                        console.log('enqueue:', value.length, total, `"${front}" ... "${back}"`);
+                    }
                     controller.enqueue(value);
                 }
             },

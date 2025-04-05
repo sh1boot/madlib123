@@ -2,7 +2,7 @@ const debug = false;
 const chunk_size = 32768;
 const goal_size = 200000;
 
-import {ml, kw, ln_r, ln_u, mlParser } from './madlib.ts';
+import {ml, kw, ln_r, ln_u, rep, mlParser } from './madlib.ts';
 
 var UTF8 = (v) => {
     const utf8enc = new TextEncoder();
@@ -47,28 +47,36 @@ const kAdjectiveBad = UTF8([
 ]);
 
 const kAdjective = UTF8([
-    "smelly",
-    "wicked",
+    "bilious",
+    "cheesy",
+    "clumpy",
+    "clumsy",
+    "colourful",
+    "fragrant",
+    "flavourful",
     "grody",
     "ground-breaking",
+    "hairy",
     "high-tech",
-    "spectacular",
-    "resounding",
+    "hyperbolic",
     "hypersonic",
-    "lumpy",
-    "milky",
-    "serene",
-    "fragrant",
-    "bilious",
-    "thunderous",
-    "psychedelic",
-    "colourful",
-    "monotonous",
-    "cheesy",
-    "clumsy",
     "indigestible",
-    "scandalous",
+    "lumpy",
+    "messy",
+    "milky",
+    "monotonous",
     "musky",
+    "psychedelic",
+    "resounding",
+    "scandalous",
+    "serene",
+    "smelly",
+    "spectacular",
+    "spicy",
+    "tasty",
+    "tangy",
+    "thunderous",
+    "wicked",
 ]);
 
 const kUsuallyAdjective = usually(kAdjective);
@@ -160,6 +168,8 @@ const kPet = UTF8([
     "axolotyl",
     "goat",
     "octopus",
+    "hamster",
+    "tarantula",
 ]);
 
 const kProfessional = UTF8([
@@ -168,6 +178,7 @@ const kProfessional = UTF8([
     "earwax specialist",
     "shaman",
     "meth dealer",
+    "fluffer",
     ml`${kCoachableActivity} coach`,
     ml`${kPet} trainer`,
     ml`${kPet} groomer`,
@@ -176,6 +187,7 @@ const kProfessional = UTF8([
 const kRelative = UTF8([
     "mother",
     "father",
+    "cousin",
     "great great grandmother",
     "great great grandson",
 ]);
@@ -216,9 +228,7 @@ const kComputer = UTF8([
 ]);
 
 const kThings = UTF8([
-    "cats",
-    "dogs",
-    "axolotyls",
+    ml`${kPet}s`,
     "lambdas",
     "closures",
     "functional languages",
@@ -234,6 +244,11 @@ const kThings = UTF8([
     ml`${kComputer}s`,
 ]);
 
+const kWithExtras = UTF8([
+    "with bells on",
+    ml`with ${kAdjective} wheels`,
+]);
+
 const kDialect = UTF8([
     "British",
     "Canadian",
@@ -243,7 +258,8 @@ const kDialect = UTF8([
     "foamer",
     "biker",
     "crochet",
-    "funeral-worker",
+    "funeral",
+    ml`${kLanguage} coder`,
 ]);
 
 const kSomeWord = UTF8([
@@ -305,6 +321,7 @@ const kVerb = UTF8([
 
 const kInAPlace = UTF8([
     "in school",
+    "in church",
     "at the local pub",
     "in the Oval Office",
     "in parliament",
@@ -322,12 +339,11 @@ const kInAPlace = UTF8([
     "on the streets of New York",
     "on the teacher",
     "on TV",
-    "on Netflix",
     "on the dark web",
     ml`in ${kPerson1}'s bathtub`,
     ml`on ${kPerson1}'s car`,
     ml`in front of ${kPerson1}`,
-    ml`on top of ${kPerson1}`,
+    ml`behind ${kPerson1}`,
 ]);
 
 const synObey = UTF8([
@@ -367,7 +383,7 @@ const synDid = UTF8([
     "says they'll never do",
 ]);
 
-const kDidAThing = UTF8([
+const kVerbed = UTF8([
     "farted",
     "trumped",
     "pooped",
@@ -380,13 +396,40 @@ const kDidAThing = UTF8([
     ml`${synDid} ${kRarelyAdjective} street art`,
     ml`didn't ${synIgnore} ${synRobotsTxt}`,
     ml`ran over a ${kProfessional}`,
-    ml`ran over a ${kProfessional}`,
+    ml`short-changed a ${kProfessional}`,
     ml`manscaped their ${kPet}`,
 ]);
 
-const kDoAGoodThing = UTF8([
+const synDoing = UTF8([
+    "doing",
+    "preferring to do",
+    "wanting to do",
+    "loving to do",
+    "refusing to do",
+    "pretending to not do",
+    "saying they'll never do",
+]);
+
+const kVerbing = UTF8([
+    "farting",
+    "trumping",
+    "pooping",
+    ml`${synDoing} a ${kAdjective} fart`,
+    ml`${synDoing} a ${kAdjective} trump`,
+    ml`${synDoing} a ${kUsuallyAdjective} bottom-burp`,
+    ml`${synDoing} a ${kUsuallyAdjective} shart`,
+    ml`${synDoing} ${kUsuallyAdjective} poops`,
+    ml`${synDoing} ${kAdjective} ${kLanguage} programming`,
+    ml`${synDoing} ${kRarelyAdjective} street art`,
+    ml`running over a ${kProfessional}`,
+    ml`short-changing a ${kProfessional}`,
+    ml`manscaping their ${kPet}`,
+]);
+
+const kGoodVerb = UTF8([
     ml`${synObey} ${synRobotsTxt}`,
     "brush their teeth",
+    "tidy their room",
 ]);
 
 const kDubiousVerb = UTF8([
@@ -401,8 +444,8 @@ const kDubiousVerb = UTF8([
     ml`write ${kAdjective} ${kLanguage} code`,
     ml`create ${kRarelyAdjective} street art`,
     ml`issue a ${kAdjective} Executive Order`,
-    kDoAGoodThing,
-    kDoAGoodThing,
+    kGoodVerb,
+    kGoodVerb,
     kVerb,
 ]);
 
@@ -432,21 +475,21 @@ const synReportedly = UTF8([
     ml`${kReporters} was quoted by ${kReporters} as saying`,
 ]);
 
-const kWitnesses_were = UTF8([
-    "Onlookers were",
-    "The boys were",
-    "The girls were",
-    "Their mother was",
-    "Senators were",
-    "Reporters were",
-    "The International Olympic Committee was",
-    "Most of the victims were",
-    ml`${kPerson1} was`,
-    ml`${kPerson1}'s children were`,
+const kGroup = UTF8([
+    "Onlookers",
+    "The boys",
+    "The girls",
+    "Their parents",
+    "Senators",
+    "Reporters",
+    "The International Olympic Committee",
+    "Most of the victims",
+    ml`${kPerson1}`,
+    ml`${kPerson1}'s ${kPet}s were`,
 ]);
 const kReaction = UTF8([
-    "Doctors hate it!",
-    ml`${kWitnesses_were} ${kAdverb} ${kImpression_pp}.`
+    ml`${kProfessional}s hate this one weird trick!`,
+    ml`${kGroup} were ${kAdverb} ${kImpression_pp}.`,
 ]);
 
 const synScraping = UTF8([
@@ -490,14 +533,14 @@ const synWhile = UTF8([
     "while",
     "and then",
     "because",
-    "believing that"
+    "believing that",
 ]);
 const synIdea = UTF8([
     "idea",
     "thought",
     "plan",
     "concept",
-    "thing to do"
+    "thing to do",
 ]);
 
 const synWriteCode = UTF8([
@@ -521,11 +564,13 @@ const kRandomCode = UTF8([
     "int main(void) {",
     "os.system('rm -rf /');",
     ml`10 PRINT "${kPerson} IS COOL!!" : GOTO 10`,
-    "for i in range(0, 3**3**3**3.1415926535):",
-    "from cstdint import main",
-    "var x=()=>()=>()=>1;",
-    "abort()",
-    `printf("shiver in eternal darkness /n");`,
+    "for i in range(0, 3.14159**3.14159**3.14159**3.14159):",
+    "from cstdint import golfcart",
+    "const f=()=>()=>()=>()=>()=>()=>0;",
+    'assert("!this should never happen");',
+    "xor ax, ax",
+    "JSR #$2020",
+    ml`printf("shiver in eternal darkness /n");`,
 ]);
 
 const synThingyest = UTF8([
@@ -534,7 +579,7 @@ const synThingyest = UTF8([
     "most important",
     "worst",
     "dumbest",
-    "most disappointing"
+    "most disappointing",
 ]);
 
 const kCodeIndent = UTF8([
@@ -557,119 +602,157 @@ const kEndParagraph = UTF8("</p>\n");
 
 const kSubscribeToOurMailingList = UTF8("Subscribe to our mailing list");
 
+const kGossip = UTF8([
+    ml`${synReportedly}, ${kInAPlace}, ${kPerson1} ${kVerbed}`,
+    ml`${ln_r(kPerson1, 'p')} saw ${kPerson2} ${ln_r(ml`${kDubiousVerb} ${kInAPlace}`, 'howto')}`,
+    ml`${ln_r(kPerson2, 'p')} implemented a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')} in ${kLanguage}`,
+    ml`It took ${ln_r(kPerson2, 'p')} ${kAges} to ${synWriteCode} a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')}`,
+    ml`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
+]);
+
+const kGossipBecause = UTF8([
+    kEmpty,
+    kEmpty,
+    ml` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for`,
+    ml` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
+    ml` and then blamed it on ${kPerson}`,
+    ml` using a ${kComputer}`,
+    ml` as revenge on ${kPerson2} ${synBecauseThey} didn't ${kGoodVerb}`,
+    ml` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
+]);
+
+const kFactPart1 = UTF8([
+    ml`${kPerson2} was the original ${synInventor} of ${kw('topic')}, ${kButSomething}.`,
+    ml`Originally ${kw('topic')} was used by ${kThings} ${kForPurpose}.`,
+    ml`The ${kw('topic')} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
+    ml`In ${kDialect} slang, the word "${kSomeWord}" actually means to ${kDubiousVerb}.`,
+    kFactoid,
+]);
+
+const kFactPart2 = UTF8([
+    ml`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
+    ml`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.`,
+    ml`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.`,
+]);
+
+const kFactPart3 = UTF8([
+    kEmpty,
+    ml`But to this day most ${kThings} remain ${kAdjective}.`,
+    ml`Very few modern ${kProfessional}s still use this ${kForPurpose}.`,
+    ml`Thankfully today we have ${kThings}, instead.`,
+]);
+
+const kFactPart4 = UTF8([
+    kEmpty,
+    ml`This is why they have always respected ${synRobotsTxt} until this very day!`,
+    ml`After that they never forgot to check ${synRobotsTxt} before ${synScraping} websites.`,
+    ml`And all because they ${synDidnt} ${kGoodVerb}.`,
+]);
+
+const kFactPart5 = UTF8([
+    kEmpty,
+    kEmpty,
+    ml`${ln_u(kSubscribeToOurMailingList, 'action')} for more ${kAdjective} facts!`,
+]);
+
+const kListHead = UTF8([
+    ml`${synReportedly}`,
+    ml`Ten reasons ${kThings} are better than ${kThings}`,
+    ml`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
+    ml`TL;DR`,
+]);
+
+const kListRow = UTF8([
+    ml`${kPerson2} ${ln_r(ml`${kVerbed} ${kInAPlace}`, 'news')}, which proves it${kFullStop}`,
+    kFactoid,
+]);
+
+const kPageTitle = UTF8([
+    ml`${kPerson}'s ${kw('topic')} resource page.`,
+    ml`Things to know about ${kw('topic')}`,
+]);
+
+const kPageOpening = UTF8([
+    ml`These are some of the ${synThingyest} things you should know about ${kw('topic')}.\n${synReportedly} ${kw('topic')} is ${kAdverb} ${kAdjective}.`,
+    ml`This is a collection of ${kAdjective} information on ${kw('topic')}.`,
+]);
+
+const kPageSignoff = UTF8([
+    kEmpty,
+    "Don't forget to like and subscribe!",
+]);
+
+const kCodeHead = ml`demonstrating ${ln_r(ml`the ${kAdjective} ${kAlgorithm}`, 'algo')}:`;
+
+const kCodeTail = UTF8([
+    ml`</pre>\n<p>This should solve the problem.</p>\n`,
+    ml`</pre>\n<p>Hope this helps.</p>\n`,
+    ml`</pre>\n<p>Good luck!</p>\n`,
+]);
+
+const kStackOverflowQuestion = UTF8([
+    ml`How can I write a ${kAlgorithm} in ${kLanguage}? I'd like to create a program where ${kPerson} can input words (like nouns, verbs, adjectives, etc.), and the program will generate a ${kAdjective} story using those words. Could you explain how to structure the code and what functions I should use?`,
+    ml`How can I prevent my program from ${kVerbing} when ${kPerson} selects an invalid option? What is the best way to handle this error gracefully, so the program prompts the user again instead of ${kVerbing}?`,
+]);
+
+const kStackOverflowThanks = UTF8([
+    ml`Please hurry, I have to hand this in tomorrow.`,
+    ml`Thanks in advance for any help!`,
+]);
+
+const kParagraphBlock = ml`<p>${rep(ml`${kGossip}${kGossipBecause}.\n`, 3, 7)}</p>\n`;
+
+const kFunFactBlock = ml`<p>${kFunFact} ${kFactPart1}  ${kFactPart2}  ${kFactPart3}  ${kFactPart4}  ${kFactPart5}</p>\n`;
+
+const kListBlock = ml`<p>${kListHead}:</p><ul>${rep(ml`<li>${kListRow}</li>\n`, 4, 16)}</ul><p>${kReaction}</p>\n`;
+
+const kStackOverflowBlock = ml`<p>${kStackOverflowQuestion}  ${kStackOverflowThanks}<\p>`;
+
 // Only use UTF8() to initialise globals.  It's not efficient for
 // locals.
 UTF8 = null;
 
-function fun_fact(output) {
-    const part1 = [
-        ml`${kPerson2} was the original ${synInventor} of ${kw('topic')}, ${kButSomething}.`,
-        ml`Originally ${kw('topic')} was used by ${kThings} ${kForPurpose}.`,
-        ml`The ${kw('topic')} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
-        ml`In ${kDialect} slang, the word "${kSomeWord}" actually means to ${kDubiousVerb}.`,
-        kFactoid,
-    ];
-    const part2 = [
-        ml`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
-        ml`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.`,
-        ml`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.`,
-    ];
-    const part3 = [
-        kEmpty,
-        ml`To this day most ${kThings} remain ${kAdjective}.`,
-        ml`Only ${kPerson2} has ever successfully made this work ${kForPurpose}.`,
-    ];
-    const part4 = [
-        kEmpty,
-        ml`This is why they have always respected ${synRobotsTxt} until this very day!`,
-        ml`After that they never forgot to check ${synRobotsTxt} before ${synScraping} websites.`,
-        ml`And all because they ${synDidnt} ${kDoAGoodThing}.`,
-    ];
-    const part5 = [
-        kEmpty,
-        kEmpty,
-        ml`${ln_u(kSubscribeToOurMailingList, 'action')} for more ${kAdjective} facts!`,
-    ];
-    return output.push(ml`<p>${kFunFact} ${part1}  ${part2}  ${part3}  ${part4}  ${part5}</p>\n`);
-}
-
-function a_list(output) {
-    const head = [
-        ml`${synReportedly}`,
-        ml`Ten reasons ${kThings} are better than ${kThings}`,
-        ml`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
-        ml`TL;DR`,
-    ];
-    const row = [
-        ml`${kPerson2} ${ln_r(ml`${kDidAThing} ${kInAPlace}`, 'news')}${kFullStop}`,
-        kFactoid,
-    ];
-    const tail = [
-        kReaction,
-    ];
-    output.push(ml`<p>${head}:</p><ul>\n`);
-    for (let i = output.randint(12) + 4; i > 0; --i) {
-        output.push(ml`<li>${row}</li>\n`);
-    }
-    return output.push(ml`</ul><p>${tail}</p>\n`);
-}
-
-function a_paragraph(output) {
-    const part1 = [
-        ml`${synReportedly}, ${kInAPlace}, ${kPerson1} ${kDidAThing}`,
-        ml`${ln_r(kPerson1, 'p')} saw ${kPerson2} ${ln_r(ml`${kDubiousVerb} ${kInAPlace}`, 'howto')}`,
-        ml`${ln_r(kPerson2, 'p')} implemented a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')} in ${kLanguage}`,
-        ml`It took ${ln_r(kPerson2, 'p')} ${kAges} to ${synWriteCode} a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')}`,
-        ml`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
-    ];
-    const part2 = [
-        kEmpty,
-        kEmpty,
-        ml` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for`,
-        ml` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
-        ml` and then blamed it on ${kPerson}`,
-        ml` using a ${kComputer}`,
-        ml` as revenge on ${kPerson2} ${synBecauseThey} didn't ${kDoAGoodThing}`,
-        ml` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
-    ];
-    output.push(kStartParagraph);
-    for (let i = output.randint(4) + 3; i > 0; --i) {
-        output.push(ml`${part1}${part2}.\n`);
-    }
-    output.push(kEndParagraph);
-    return output;
-}
+const a_paragraph = (output) => output.push(kParagraphBlock);
+const fun_fact = (output) => output.push(kFunFactBlock);
+const a_list = (output) => output.push(kListBlock);
+const a_question = (output) => output.push(kStackOverflowBlock);
 
 function example_code(output) {
     const lang = output.randint(kLanguage.length);
-    const head = [
-        ml`Here's some ${kLanguage[lang]} demonstrating ${ln_r(ml`the ${kAdjective} ${kAlgorithm}`, 'also')}:`,
-    ];
-    const tail = [
-        ml`</pre>\n<p>This should solve the ${kAdjective} problem!</p>\n`,
-    ];
-    output.push(ml`<p>${head}</p>\n<pre>`);
+    output.push(ml`<p>Here's some ${kLanguage[lang]} ${kCodeHead}</p>\n<pre>`);
     var ind = 0;
-    for (let i = output.randint(12) + 4; i > 0; --i) {
+    for (let i = output.randint(12) + 8; i > 0; --i) {
         output.push(ml`${kCodeIndent[ind]}${kRandomCode}\n`);
-        ind += output.randint(3) - 1;
-        if (ind < 0) ind = 0;
-        if (ind >= kCodeIndent.length) ind = kCodeIndent.length - 1;
+        ind += (output.randint(4) - 1) >> 1;
+        ind = Math.min(Math.max(0, ind), kCodeIndent.length - 1);
     }
-    return output.push(ml`</ul><p>${tail}</p>\n`);
+    output.push(ml`</ul><p>${kCodeTail}</p>\n`);
 }
 
+const outputModes = [
+    a_paragraph,
+    fun_fact,
+    a_list,
+    a_question,
+    example_code,
+];
+
 function head(output) {
-    const title = ml`Things to know about ${kw('topic')}`;
-    const opening = [
-        ml`These are some of the ${synThingyest} things you should know about ${kw('topic')}.  ${synReportedly} ${kw('topic')} is ${kAdverb} ${kAdjective}.`
-    ];
-    return output.push(ml`<!doctype html>\n<html lang="en">\n<head><meta charset="UTF-8"/><title>${title}</title></head>\n<body>\n<h1>${title}</h1>\n<p>${opening}</p>\n`);
+    return output.push(ml`<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"/>
+  <title>${kPageTitle}</title>
+</head>
+<body>
+<h1>${kPageTitle}</h1>
+<p>${kPageOpening}</p>
+`);
 }
 
 function tail(output) {
-    return output.push(ml`<p>Don't forget to like and subscribe!</p>\n</body></html>`);
+    return output.push(ml`<p>${kPageSignoff}</p>\n</body></html>`);
 }
+
 
 export function* pageGenerator(hash: number[], path: string) {
     const escapeHTML = (s) => s.replaceAll('&', '&amp;')
@@ -684,26 +767,15 @@ export function* pageGenerator(hash: number[], path: string) {
         topic = new TextEncoder().encode(topic);
     }
 
-
     let output = new mlParser({topic: topic}, hash, chunk_size * 2);
+    let total = 0;
 
     head(output);
-    let total = 0;
+
     while (total + output.length < goal_size) {
-        switch (output.randint(5)) {
-        case 0:  fun_fact(output); break;
-        case 1:  a_list(output); break;
-        case 2:  example_code(output); break;
-        default: a_paragraph(output); break;
-        }
+        outputModes[output.randint(outputModes.length)](output);
         if (output.length >= chunk_size) {
             const to_send = Math.min(output.length, chunk_size);
-            if (debug) {
-                const dec = (s) => new TextDecoder().decode(s).replaceAll(/[\u0000-\u001f\u007f-\u009f]/g, '.');
-                const leader = dec(output.bytes(16));
-                const boundary = dec(output.bytes(Math.min(output.length, to_send + 8)).subarray(to_send - 8));
-                console.log('yield:', to_send, '/', output.length, total, 'of', goal_size, `"${leader}" ... "${boundary}"`);
-            }
             yield output.bytes(to_send);
             output.shift(to_send);
             total += to_send;
@@ -711,11 +783,6 @@ export function* pageGenerator(hash: number[], path: string) {
     }
     tail(output);
 
-    if (debug) {
-        const dec = (s) => new TextDecoder().decode(s).replaceAll(/[\u0000-\u001f\u007f-\u009f]/g, '.');
-        const leader = dec(output.bytes(16));
-        const boundary = dec(output.bytes().subarray(Math.max(output.length - 16, 0)));
-        console.log('yield:', output.length, total, 'of', goal_size, 'total:', total + output.length, `"${leader}" ... "${boundary}"`);
-    }
     yield output.bytes();
+    output.reset();
 }

@@ -210,13 +210,13 @@ const kPerson2 = UTF8([
 ]);
 
 const kYear = (randnum) => 1700 + (randnum % 320);
-const kDecade = (randnum) => ml`${170 + (randnum % 32)}0's`;
+const kDecade = ml`1${(randnum) => randnum % 32 + 70}0's`;
 const kAges = UTF8([
     "months",
     "weeks",
     "days",
     "hours",
-    (randnum) => ml`${(randnum % 3601) + 1} seconds`,
+    ml`${(randnum) => randnum % 3601 + 1} seconds`,
 ]);
 
 const kComputer = UTF8([
@@ -708,6 +708,8 @@ const kListBlock = ml`<p>${kListHead}:</p><ul>${rep(ml`<li>${kListRow}</li>\n`, 
 
 const kStackOverflowBlock = ml`<p>${kStackOverflowQuestion}  ${kStackOverflowThanks}<\p>`;
 
+const kLineFeed = UTF8("\n");
+
 // Only use UTF8() to initialise globals.  It's not efficient for
 // locals.
 UTF8 = null;
@@ -717,12 +719,15 @@ const fun_fact = (output) => output.push(kFunFactBlock);
 const a_list = (output) => output.push(kListBlock);
 const a_question = (output) => output.push(kStackOverflowBlock);
 
+// TODO: make this usable
 function example_code(output) {
     const lang = output.randint(kLanguage.length);
     output.push(ml`<p>Here's some ${kLanguage[lang]} ${kCodeHead}</p>\n<pre>`);
     var ind = 0;
     for (let i = output.randint(12) + 8; i > 0; --i) {
-        output.push(ml`${kCodeIndent[ind]}${kRandomCode}\n`);
+        output.push(kCodeIndent[ind]);
+        output.push(kRandomCode);
+        output.push(kLineFeed);
         ind += (output.randint(4) - 1) >> 1;
         ind = Math.min(Math.max(0, ind), kCodeIndent.length - 1);
     }
@@ -734,7 +739,7 @@ const outputModes = [
     fun_fact,
     a_list,
     a_question,
-    example_code,
+//    example_code,
 ];
 
 function head(output) {
@@ -771,6 +776,10 @@ export function* pageGenerator(hash: number[], path: string) {
     let total = 0;
 
     head(output);
+    if (true) {
+        yield output.bytes();
+        output.reset();
+    }
 
     while (total + output.length < goal_size) {
         outputModes[output.randint(outputModes.length)](output);

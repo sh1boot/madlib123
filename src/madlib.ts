@@ -60,9 +60,7 @@ export const ln_u = (s, c) => (randnum) => ((randnum & 15) < 12 ? new mlLink(s, 
 
 export class mlParser {
     data:Uint8Array = null;
-    rngextra:Uint32Array = null;
-    rngseed:number = 0;
-    rngindex:number = 0;
+    rngstate:Uint32Array = null;
     size:number = 0;
     length:number = 0;
     enc:TextEncoder = new TextEncoder();
@@ -71,8 +69,7 @@ export class mlParser {
     constructor(keywords:object, hash: Uint32Array, size: number, margin: number = 1024) {
         this.data = new Uint8Array(size + margin);
         this.size = size;
-        this.rngextra = hash;
-        this.rngseed = hash[1] ^ hash[2] ^ hash[3];
+        this.rngstate = hash;
         this.keywords = keywords;
     }
 
@@ -83,6 +80,14 @@ export class mlParser {
     bytes(n: number = null) {
         if (n === null || n > this.length) n = this.length;
         return this.data.subarray(0, n);
+        this.rngseed = t;
+        t ^= this.rngextra[this.rngindex];
+        this.rngindex = (this.rngindex + 1) & 7;
+        t ^= t >>> 16;
+        t = Math.imul(t, 0x21f0aaad);
+        t ^= t >>> 15;
+        t = Math.imul(t, 0x735a2d97);
+        return (t ^ t >>> 15) >>> 1;  // TODO: see if 31-bit result actually helps performance
     }
 
     shift(n: number) {
@@ -92,15 +97,19 @@ export class mlParser {
     }
 
     rand() {
-        let t: number = (this.rngseed + 0x9e3779b9) >>> 0;
-        this.rngseed = t;
-        t ^= this.rngextra[this.rngindex];
-        this.rngindex = (this.rngindex + 1) & 7;
-        t ^= t >>> 16;
-        t = Math.imul(t, 0x21f0aaad);
-        t ^= t >>> 15;
-        t = Math.imul(t, 0x735a2d97);
-        return (t ^ t >>> 15) >>> 1;  // TODO: see if 31-bit result actually helps performance
+        let t = this.rngstate[4] >>> 0;
+        let s = this.rngstate[0] >>> 0;
+        let c = this.rngstate[5] + 362437 >>> 0;
+        this.rngstate[4] = this.rngstate[3];
+        this.rngstate[3] = this.rngstate[2];
+        this.rngstate[2] = this.rngstate[1];
+        this.rngstate[1] = s;
+        t ^= t >>> 2;
+        t ^= t << 1;
+        t ^= s ^ (s >>> 4);
+        this.rngstate[0] = t;
+        this.rngstate[5] = c;
+        return t + c >>> 2;
     }
 
     randint(n: number) {
@@ -151,10 +160,10 @@ export class mlParser {
         // TODO: keep a list of push stop-start pairs for
         // use by back-references.
         this.#pushUTF8(input.strings[0]);
-        input.args.forEach((arg, i) => {
-            this.push(arg);
+        for (let i = 0; i < input.args.length; ++i) {
+            this.push(input.args[i]);
             this.#pushUTF8(input.strings[i + 1]);
-        });
+        }
     }
 
     #pushUTF8(value: Uint8Array) {
@@ -171,6 +180,7 @@ export class mlParser {
     #pushString(s:string) {
         this.length += this.enc.encodeInto(s, this.data.subarray(this.length)).written;
     }
+    static badchars = new Uint32Array([0xffffffff, 0xfc00987d, 0x78000001, 0xa8000001]);
     #pushLink(obj) {
         // TODO: randomly inject hostnames from a list of other generators
         this.#pushString('<a href="/');
@@ -187,11 +197,9 @@ export class mlParser {
         const stop = this.length;
         this.#pushString('/">');
         const urlsafe = (c: number) => {
-            if (c >= 128) return c;  // assume UTF-8 coding is clean
-            const u = c & 0xdf;
-            if (0x41 <= u && u <= 0x5a) return c;
-            if ("-_.!~*'()".includes(String.fromCharCode(c))) return c;
-            return 0x2d;
+            if (c >= 128) return c;  // assume (ASS-U-ME) UTF-8 coding is clean
+            if ((mlParser.badchars[c >> 5] >>> (c & 31)) & 1) return 0x2d;
+            return c;
         }
         for (let i = start; i < stop; ++i) {
             let c = this.data[i];

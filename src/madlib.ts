@@ -70,6 +70,8 @@ export class mlParser {
         this.data = new Uint8Array(size + margin);
         this.size = size;
         this.rngstate = hash;
+        this.rngstate[6] |= 1;
+        this.rngstate[7] |= 1;
         this.keywords = keywords;
     }
 
@@ -80,14 +82,6 @@ export class mlParser {
     bytes(n: number = null) {
         if (n === null || n > this.length) n = this.length;
         return this.data.subarray(0, n);
-        this.rngseed = t;
-        t ^= this.rngextra[this.rngindex];
-        this.rngindex = (this.rngindex + 1) & 7;
-        t ^= t >>> 16;
-        t = Math.imul(t, 0x21f0aaad);
-        t ^= t >>> 15;
-        t = Math.imul(t, 0x735a2d97);
-        return (t ^ t >>> 15) >>> 1;  // TODO: see if 31-bit result actually helps performance
     }
 
     shift(n: number) {
@@ -99,17 +93,18 @@ export class mlParser {
     rand() {
         let t = this.rngstate[4] >>> 0;
         let s = this.rngstate[0] >>> 0;
-        let c = this.rngstate[5] + 362437 >>> 0;
+        let c = this.rngstate[5] + this.rngstate[6];
+        let d = Math.imul(c, this.rngstate[7]);
         this.rngstate[4] = this.rngstate[3];
         this.rngstate[3] = this.rngstate[2];
         this.rngstate[2] = this.rngstate[1];
         this.rngstate[1] = s;
         t ^= t >>> 2;
         t ^= t << 1;
-        t ^= s ^ (s >>> 4);
+        t ^= s ^ (s << 4);
         this.rngstate[0] = t;
         this.rngstate[5] = c;
-        return t + c >>> 2;
+        return (t ^ d) >>> 0;
     }
 
     randint(n: number) {

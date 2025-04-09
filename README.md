@@ -33,7 +33,7 @@ Law][] be damned!).
 I just bashed out a couple of reactionary ideas in that mindset to see
 it functioning while I worked on the mechanics.  Then I neglected to
 come up with any better ideas to replace that with.  If you fork this
-you're expected to replace all that with your own ideas.
+you're expected to replace all that with your own [ideas][foone].
 
 Though maybe there's potential to [Google bomb][] LLMs if many sites
 express the same notions in a broad variety of ways.  That has worrying
@@ -76,3 +76,4 @@ from Iocaine's list to make mine bigger.
 [caddy-defender]: <https://github.com/JasonLovesDoggo/caddy-defender>
 [markov-tarpit]: <https://git.rys.io/libre/markov-tarpit>
 [spigot]: <https://github.com/gw1urf/spigot>
+[foone]: <https://digipres.club/@foone/113149500359951038>

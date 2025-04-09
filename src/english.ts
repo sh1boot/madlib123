@@ -719,12 +719,7 @@ const kLineFeed = UTF8("\n");
 // locals.
 UTF8 = null;
 
-const a_paragraph = (output) => output.push(kParagraphBlock);
-const fun_fact = (output) => output.push(kFunFactBlock);
-const a_list = (output) => output.push(kListBlock);
-const a_question = (output) => output.push(kStackOverflowBlock);
-
-// TODO: make this usable
+// TODO: make this into an mlObject constructor
 function example_code(output) {
     const lang = output.randint(kLanguage.length);
     output.push(ml`<p>Here's some ${kLanguage[lang]} ${kCodeHead}</p>\n<pre>`);
@@ -740,11 +735,10 @@ function example_code(output) {
 }
 
 const outputModes = [
-    a_paragraph,
-    fun_fact,
-    a_list,
-    a_question,
-//    example_code,
+    kParagraphBlock,
+    kFunFactBlock,
+    kListBlock,
+    kStackOverflowBlock,
 ];
 
 function head(output) {
@@ -787,7 +781,7 @@ export function* pageGenerator(hash: number[], path: string) {
     }
 
     while (total + output.length < goal_size) {
-        outputModes[output.randint(outputModes.length)](output);
+        output.push(outputModes[output.randint(outputModes.length)]);
         if (output.length >= chunk_size) {
             const to_send = Math.min(output.length, chunk_size);
             yield output.bytes(to_send);

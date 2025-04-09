@@ -1,5 +1,5 @@
 const debug = false;
-const chunk_size = 32768;
+const chunk_size = 16384;
 const goal_size = 200000;
 
 import {ml, kw, ln_r, ln_u, rep, mlParser } from './madlib.ts';
@@ -192,21 +192,26 @@ const kRelative = UTF8([
     "great great grandson",
 ]);
 
-const kPerson1 = UTF8([
-    kPerson,
-    kPerson,
-    kPerson,
+const kMetaPerson = UTF8([
     ml`${kPerson}'s ${kPet}`,
     ml`${kPerson}'s ${kRelative}`,
     ml`${kPerson}'s ${kProfessional}`,
 ]);
+
+const kMetaMetaPerson = UTF8([
+    ml`${kMetaPerson}'s ${kPet}`,
+    ml`${kMetaPerson}'s ${kRelative}`,
+    ml`${kMetaPerson}'s ${kProfessional}`,
+]);
+
+const kPerson1 = UTF8([
+    kPerson,
+    kMetaPerson,
+]);
 const kPerson2 = UTF8([
-    kPerson1,
-    kPerson1,
-    kPerson1,
-    ml`${kPerson1}'s ${kPet}`,
-    ml`${kPerson1}'s ${kRelative}`,
-    ml`${kPerson1}'s ${kProfessional}`,
+    kPerson,
+    kMetaPerson,
+    kMetaMetaPerson,
 ]);
 
 const kYear = (randnum) => 1700 + (randnum % 320);
@@ -668,7 +673,7 @@ const kListRow = UTF8([
 ]);
 
 const kPageTitle = UTF8([
-    ml`${kPerson}'s ${kw('topic')} resource page.`,
+    ml`A ${kw('topic')} resource page, by ${kMetaMetaPerson}.`,
     ml`Things to know about ${kw('topic')}`,
 ]);
 
@@ -776,7 +781,7 @@ export function* pageGenerator(hash: number[], path: string) {
     let total = 0;
 
     head(output);
-    if (true) {
+    if (false) {
         yield output.bytes();
         output.reset();
     }

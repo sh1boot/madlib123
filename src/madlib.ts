@@ -1,7 +1,8 @@
 const debug = false;
 
-const utf8cache = new WeakMap();
 class mlObject {
+    static utf8cache = new WeakMap();
+    static utf8enc = new TextEncoder();
     strings:Uint8Array[] = null;
     args: object[] = null;
 
@@ -12,14 +13,10 @@ class mlObject {
                 console.log(strings, 'bad ml args:', args);
             }
         }
-        const UTF8 = (v) => {
-            const utf8enc = new TextEncoder();
-            if (!utf8cache.has(v)) {
-                utf8cache.set(v, v.map((s) => utf8enc.encode(s)));
-            }
-            return utf8cache.get(v);
+        if (!mlObject.utf8cache.has(strings)) {
+            mlObject.utf8cache.set(strings, strings.map((s) => mlObject.utf8enc.encode(s)));
         }
-        this.strings = UTF8(strings);
+        this.strings = mlObject.utf8cache.get(strings);
         this.args = args;
     }
 };
@@ -133,8 +130,9 @@ export class mlParser {
                 }
                 return true;
             } else if (typeof value === 'function') {
-                value = value(this.rand());
+                value = value(this.rand(), this.keywords);
             } else if (value instanceof mlObject) {
+                // TODO: inline and flatten, don't recurse
                 this.#pushMlTemplate(value);
                 return true;
             } else if (value instanceof mlLink) {
@@ -191,15 +189,13 @@ export class mlParser {
         this.push(obj.content);
         const stop = this.length;
         this.#pushString('/">');
-        const urlsafe = (c: number) => {
-            if (c >= 128) return c;  // assume (ASS-U-ME) UTF-8 coding is clean
-            if ((mlParser.badchars[c >> 5] >>> (c & 31)) & 1) return 0x2d;
-            return c;
-        }
         for (let i = start; i < stop; ++i) {
             let c = this.data[i];
             this.data[this.length++] = c;
-            this.data[i] = urlsafe(c);
+            if (c < 128) {
+                if ((mlParser.badchars[c >>> 5] >>> (c & 31)) & 1) c = 0x2d;
+            }
+            this.data[i] = c;
         }
         this.#pushString('</a>');
     }

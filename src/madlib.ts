@@ -29,11 +29,14 @@ class mlKeyword {
 };
 
 class mlLink {
+    static utf8enc = new TextEncoder();
     content:mlObject = null;
-    code:string = null;
-    constructor(content:mlObject, code:string) {
+    code:Uint8Array = null;
+    probability:number = 100;
+    constructor(content:mlObject, code:string, probability:number = 100) {
         this.content = content;
-        this.code = code;
+        this.code = mlLink.utf8enc.encode(code);
+        this.probability = probability;
     }
 };
 
@@ -51,8 +54,8 @@ class mlRepeat {
 export const ml = (strings, ...args) => new mlObject(strings, args);
 export const kw = (keyword) => new mlKeyword(keyword);
 export const rep = (s, min, max) => new mlRepeat(s, min, max);
-export const ln_r = (s, c) => (randnum) => ((randnum & 15) < 4 ? new mlLink(s, c) : s);
-export const ln_u = (s, c) => (randnum) => ((randnum & 15) < 12 ? new mlLink(s, c) : s);
+export const ln_r = (s, c) => new mlLink(s, c, 25);
+export const ln_u = (s, c) => new mlLink(s, c, 75);
 // TODO: back(n)
 
 export class mlParser {
@@ -109,11 +112,13 @@ export class mlParser {
         return r % n;
     }
 
+    static kOOPS = new TextEncoder().encode("***OOPS***");
     push(value) {
         while (!(value === null || value === undefined)) {
             // TODO: surely there's a better way!
             if (value instanceof Uint8Array) {
-                if (value.length) this.#pushUTF8(value);
+                this.data.set(value, this.length);
+                this.length += value.length;
                 return true;
             } else if (Array.isArray(value)) {
                 let n = this.randint(value.length);
@@ -145,58 +150,71 @@ export class mlParser {
         }
         // This should never happen
         console.log("fell out of expansion loop with value", value);
-        this.#pushString("***OOPS***");
+        this.data.set(mlParser.kOOPS, this.length);
+        this.length += mlParser.kOOPS.length;
         return false;
     }
 
     #pushMlTemplate(input) {
         // TODO: keep a list of push stop-start pairs for
         // use by back-references.
-        this.#pushUTF8(input.strings[0]);
+        if (input.strings[0].length) this.data.set(input.strings[0], this.length);
+        this.length += input.strings[0].length;
         for (let i = 0; i < input.args.length; ++i) {
             this.push(input.args[i]);
-            this.#pushUTF8(input.strings[i + 1]);
+            if (input.strings[i + 1].length) this.data.set(input.strings[i + 1], this.length);
+            this.length += input.strings[i + 1].length;
         }
     }
-
-    #pushUTF8(value: Uint8Array) {
-        this.data.set(value, this.length);
-        this.length += value.length;
-    }
-
     #pushNumber(n:number) {
-        this.length += this.enc.encodeInto(n.toString(), this.data.subarray(this.length)).written;
+        let tmp = this.length + 16;
+        let end = tmp;
+        do {
+            let r = n >>> 0;
+            n = n / 10 >>> 0;
+            r -= n * 10;
+            this.data[tmp--] = 0x30 + r;
+        } while (n > 0);
+        while (tmp < end) {
+            this.data[this.length++] = this.data[++tmp];
+        }
     }
-    #pushChar(c:string) {
-        this.data[this.length++] = c.charCodeAt();
-    }
-    #pushString(s:string) {
-        this.length += this.enc.encodeInto(s, this.data.subarray(this.length)).written;
-    }
-    static badchars = new Uint32Array([0xffffffff, 0xfc00987d, 0x78000001, 0xa8000001]);
+    static kBadChars = new Uint32Array([0xffffffff, 0xfc00987d, 0x78000001, 0xa8000001]);
+    static kLinkStart = new TextEncoder().encode('<a href="/');
+    static kLinkEnd = new TextEncoder().encode('/">');
+    static kSpanEnd = new TextEncoder().encode('</a>');
+    static kSlash = '/'.charCodeAt();
     #pushLink(obj) {
+        if (this.randint(100) >= obj.probability) {
+            this.push(obj.content);
+            return;
+        }
         // TODO: randomly inject hostnames from a list of other generators
-        this.#pushString('<a href="/');
+        this.data.set(mlParser.kLinkStart, this.length);
+        this.length += mlParser.kLinkStart.length;
         this.#pushNumber(this.rand() & 0xffff);
-        this.#pushChar('/');
+        this.data[this.length++] = mlParser.kSlash;
         this.#pushNumber(this.rand() & 0xffff);
-        this.#pushChar('/');
+        this.data[this.length++] = mlParser.kSlash;
         if (obj.code) {
-            this.#pushString(obj.code);
-            this.#pushChar('/');
+            this.data.set(obj.code, this.length);
+            this.length += obj.code.length;
+            this.data[this.length++] = mlParser.kSlash;
         }
         const start = this.length;
         this.push(obj.content);
         const stop = this.length;
-        this.#pushString('/">');
+        this.data.set(mlParser.kLinkEnd, this.length);
+        this.length += mlParser.kLinkEnd.length;
         for (let i = start; i < stop; ++i) {
             let c = this.data[i];
             this.data[this.length++] = c;
             if (c < 128) {
-                if ((mlParser.badchars[c >>> 5] >>> (c & 31)) & 1) c = 0x2d;
+                if ((mlParser.kBadChars[c >>> 5] >>> (c & 31)) & 1) c = 0x2d;
             }
             this.data[i] = c;
         }
-        this.#pushString('</a>');
+        this.data.set(mlParser.kSpanEnd, this.length);
+        this.length += mlParser.kSpanEnd.length;
     }
 };

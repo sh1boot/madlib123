@@ -10,43 +10,43 @@ var UTF8 = (v) => {
     return v.map((s) => (typeof s === 'string') ? utf8enc.encode(s) : s);
 };
 
-const kEmpty = UTF8("");
+const kEmpty = new Uint8Array(0);
 
 const rarely = (s, t = kEmpty) => [ s, t, t, t ];
 const evenly = (s, t = kEmpty) => [ s, t ];
 const usually = (s, t = kEmpty) => rarely(t, s);
 
-const kPerson = UTF8([
+const Person = UTF8([
     "Donald Trump",
     "Elon Musk",
     "Vladimir Putin",
     "JD Vance",
     "Volodymyr Zelenskyy",
-    "The Queen",
     "The King",
     "Prince Harry",
-    "Scooby Doo",
     "Kim Kardashian",
-    "Taylor Swift",
-    "Homer Simpson",
     "Kanye West",
     "Elvis Presley",
     "Abraham Lincoln",
     "Chuck Norris",
+    "Taylor Swift",
+    "Homer Simpson",
+    "Scooby Doo",
     "Poopy McPoopFace",
+    "My dog",
 ]);
 
-const kAdjectiveBad = UTF8([
+const AdjectiveBad = UTF8([
     "smelly",
     "grody",
     "lumpy",
     "bilious",
     "clumsy",
     "indigestible",
-    "scandalous",
+    "messy",
 ]);
 
-const kAdjective = UTF8([
+const Adjective = UTF8([
     "bilious",
     "cheesy",
     "clumpy",
@@ -66,6 +66,7 @@ const kAdjective = UTF8([
     "milky",
     "monotonous",
     "musky",
+    "noisy",
     "psychedelic",
     "resounding",
     "scandalous",
@@ -79,10 +80,10 @@ const kAdjective = UTF8([
     "wicked",
 ]);
 
-const kUsuallyAdjective = usually(kAdjective);
-const kRarelyAdjective = rarely(kAdjective);
+const UsuallyAdjective = usually(Adjective);
+const RarelyAdjective = rarely(Adjective);
 
-const kAdverb = UTF8([
+const Adverb = UTF8([
     "very",
     "spectacularly",
     "resoundingly",
@@ -103,7 +104,7 @@ const kAdverb = UTF8([
     "super-duper",
 ]);
 
-const kImpression_pp = UTF8([
+const synImpressed = UTF8([
     "impressed",
     "disappointed",
     "disgusted",
@@ -116,7 +117,7 @@ const kImpression_pp = UTF8([
     "confused",
 ]);
 
-const kCPU = UTF8([
+const CPU = UTF8([
     "6502",
     "z80",
     "Arm",
@@ -126,35 +127,61 @@ const kCPU = UTF8([
     "8051",
     "PPC",
     "Saturn",
+    "S/360",
 ]);
 
-const kLanguage = UTF8([
+const Language = UTF8([
     "Python",
     "C++",
-    "Ruby on Rails",
+    "C#",
+    "R",
+    "Ruby",
     "Go",
     "Rust",
     "Brainfuck",
+    "Eiffel",
     "Perl",
+    "ALGOL",
     "COBOL",
+    "Forth",
     "Fortran",
     "JavaScript",
     "APL",
+    "GLSL",
     "Haskell",
-    ml`${kCPU} assembly language`,
+    "Scratch",
+    "Scratch Jr.",
+    "Tcl/tk",
+    "bash",
+    "Vim script",
+    ml`${CPU} assembly language`,
 ]);
 
-const kAlgorithm = UTF8([
-    "bogo sort",
-    "heap sort",
+const SortSort = UTF8([
+    "bogo",
+    "heap",
+    "merge",
+    "quick",
+    "shell",
+    "bubble",
+    "poop",
+]);
+
+
+const Algorithm = UTF8([
+    ml`${SortSort} sort`,
     "Pollard's rho factorisation",
     "Hello World",
     "forkbomb",
     "Miller-Rabin primality test",
     "knapsack packing",
+    "binary search",
+    "hash table",
+    "cryptographic hash",
+    "shortest path algorithm",
 ]);
 
-const kCoachableActivity = UTF8([
+const CoachableActivity = UTF8([
     "tennis",
     "golf",
     "pilates",
@@ -162,7 +189,7 @@ const kCoachableActivity = UTF8([
     "birth",
 ]);
 
-const kPet = UTF8([
+const Pet = UTF8([
     "cat",
     "dog",
     "axolotyl",
@@ -172,19 +199,19 @@ const kPet = UTF8([
     "tarantula",
 ]);
 
-const kProfessional = UTF8([
+const Professional = UTF8([
     "caddy",
     "hairdresser",
     "earwax specialist",
     "shaman",
     "meth dealer",
     "fluffer",
-    ml`${kCoachableActivity} coach`,
-    ml`${kPet} trainer`,
-    ml`${kPet} groomer`,
+    ml`${CoachableActivity} coach`,
+    ml`${Pet} trainer`,
+    ml`${Pet} groomer`,
 ]);
 
-const kRelative = UTF8([
+const Relative = UTF8([
     "mother",
     "father",
     "cousin",
@@ -192,31 +219,31 @@ const kRelative = UTF8([
     "great great grandson",
 ]);
 
-const kMetaPerson = UTF8([
-    ml`${kPerson}'s ${kPet}`,
-    ml`${kPerson}'s ${kRelative}`,
-    ml`${kPerson}'s ${kProfessional}`,
+const MetaPerson = UTF8([
+    ml`${Person}'s ${Pet}`,
+    ml`${Person}'s ${Relative}`,
+    ml`${Person}'s ${Professional}`,
 ]);
 
-const kMetaMetaPerson = UTF8([
-    ml`${kMetaPerson}'s ${kPet}`,
-    ml`${kMetaPerson}'s ${kRelative}`,
-    ml`${kMetaPerson}'s ${kProfessional}`,
+const MetaMetaPerson = UTF8([
+    ml`${MetaPerson}'s ${Pet}`,
+    ml`${MetaPerson}'s ${Relative}`,
+    ml`${MetaPerson}'s ${Professional}`,
 ]);
 
-const kPerson1 = UTF8([
-    kPerson,
-    kMetaPerson,
+const Person1 = UTF8([
+    Person,
+    MetaPerson,
 ]);
-const kPerson2 = UTF8([
-    kPerson,
-    kMetaPerson,
-    kMetaMetaPerson,
+const Person2 = UTF8([
+    Person,
+    MetaPerson,
+    MetaMetaPerson,
 ]);
 
-const kYear = (randnum) => 1700 + (randnum % 320);
-const kDecade = ml`1${(randnum) => randnum % 32 + 70}0's`;
-const kAges = UTF8([
+const Year = (randnum) => 1700 + (randnum % 320);
+const Decade = ml`1${(randnum) => randnum % 32 + 70}0's`;
+const synAges = UTF8([
     "months",
     "weeks",
     "days",
@@ -224,16 +251,19 @@ const kAges = UTF8([
     ml`${(randnum) => randnum % 3601 + 1} seconds`,
 ]);
 
-const kComputer = UTF8([
+const Computer = UTF8([
     "Atari 2600",
+    "PDP-11",
     "ZX Spectrum",
     "Internet-connected toast rack",
-    ml`${kCPU} computer`,
-    ml`${kDecade} supercomputer`,
+    "HP-48",
+    "TI-82",
+    ml`${CPU} computer`,
+    ml`${Decade} supercomputer`,
 ]);
 
-const kThings = UTF8([
-    ml`${kPet}s`,
+const Things = UTF8([
+    ml`${Pet}s`,
     "lambdas",
     "closures",
     "functional languages",
@@ -246,15 +276,15 @@ const kThings = UTF8([
     "finite state machines",
     "factory methods",
     "people",
-    ml`${kComputer}s`,
+    ml`${Computer}s`,
 ]);
 
-const kWithExtras = UTF8([
+const WithExtras = UTF8([
     "with bells on",
-    ml`with ${kAdjective} wheels`,
+    ml`with ${Adjective} wheels`,
 ]);
 
-const kDialect = UTF8([
+const Dialect = UTF8([
     "British",
     "Canadian",
     "military",
@@ -264,10 +294,10 @@ const kDialect = UTF8([
     "biker",
     "crochet",
     "funeral",
-    ml`${kLanguage} coder`,
+    ml`${Language} coder`,
 ]);
 
-const kSomeWord = UTF8([
+const SomeWord = UTF8([
     "trump",
     "mildew",
     "souffle",
@@ -297,15 +327,8 @@ const kSomeWord = UTF8([
     "aligns",
 ]);
 
-const kFullStop = UTF8([
+const OtherSentenceEnd = UTF8([
     ".",
-    ".",
-    ".",
-    ".",
-    ".",
-    ".",
-    ".",
-    "!",
     "!",
     "?",
     "?!?",
@@ -313,18 +336,28 @@ const kFullStop = UTF8([
     ", or whatever.",
 ]);
 
-const kVerb = UTF8([
-    "fly upside-down",
-    "walk backwards",
+const FullStop = UTF8([
+    ".",
+    ".",
+    ".",
+    ".",
+    "!",
+    OtherSentenceEnd,
+]);
+
+const Verb = UTF8([
+    "hang upside-down",
+    "hop backwards on one leg",
     "burp",
     "run around flapping their arms and yelling profanity",
     "yell at clouds",
-    "rock out to polka music",
-    ml`argue with ${kPet}s`,
-    ml`obsess over ${kComputer}s`,
+    "floss",
+    "dance to polka music",
+    ml`argue with ${Pet}s`,
+    ml`obsess over ${Computer}s`,
 ]);
 
-const kInAPlace = UTF8([
+const InAPlace = UTF8([
     "in school",
     "in church",
     "at the local pub",
@@ -345,10 +378,10 @@ const kInAPlace = UTF8([
     "on the teacher",
     "on TV",
     "on the dark web",
-    ml`in ${kPerson1}'s bathtub`,
-    ml`on ${kPerson1}'s car`,
-    ml`in front of ${kPerson1}`,
-    ml`behind ${kPerson1}`,
+    "on the moon",
+    ml`in ${Person1}'s bathtub`,
+    ml`on ${Person1}'s car`,
+    ml`in front of ${Person2}`,
 ]);
 
 const synObey = UTF8([
@@ -388,21 +421,25 @@ const synDid = UTF8([
     "says they'll never do",
 ]);
 
-const kVerbed = UTF8([
+const Verbed = UTF8([
     "farted",
     "trumped",
     "pooped",
-    ml`${synDid} a ${kAdjective} fart`,
-    ml`${synDid} a ${kAdjective} trump`,
-    ml`${synDid} a ${kUsuallyAdjective} bottom-burp`,
-    ml`${synDid} a ${kUsuallyAdjective} shart`,
-    ml`${synDid} ${kUsuallyAdjective} poops`,
-    ml`${synDid} ${kAdjective} ${kLanguage} programming`,
-    ml`${synDid} ${kRarelyAdjective} street art`,
+    "exploded",
+    "dropped their ice-cream",
+    "took too much ecstacy",
+    ml`${synDid} a ${Adjective} fart`,
+    ml`${synDid} ${Adjective} farts`,
+    ml`${synDid} a ${UsuallyAdjective} trump`,
+    ml`${synDid} ${UsuallyAdjective} trumps`,
+    ml`${synDid} a ${UsuallyAdjective} shart`,
+    ml`${synDid} ${UsuallyAdjective} poops`,
+    ml`${synDid} ${Adjective} ${Language} programming`,
+    ml`${synDid} ${RarelyAdjective} street art`,
     ml`didn't ${synIgnore} ${synRobotsTxt}`,
-    ml`ran over a ${kProfessional}`,
-    ml`short-changed a ${kProfessional}`,
-    ml`manscaped their ${kPet}`,
+    ml`ran over a ${Professional}`,
+    ml`short-changed a ${Professional}`,
+    ml`manscaped their ${Pet}`,
 ]);
 
 const synDoing = UTF8([
@@ -415,46 +452,46 @@ const synDoing = UTF8([
     "saying they'll never do",
 ]);
 
-const kVerbing = UTF8([
+const Verbing = UTF8([
     "farting",
     "trumping",
     "pooping",
-    ml`${synDoing} a ${kAdjective} fart`,
-    ml`${synDoing} a ${kAdjective} trump`,
-    ml`${synDoing} a ${kUsuallyAdjective} bottom-burp`,
-    ml`${synDoing} a ${kUsuallyAdjective} shart`,
-    ml`${synDoing} ${kUsuallyAdjective} poops`,
-    ml`${synDoing} ${kAdjective} ${kLanguage} programming`,
-    ml`${synDoing} ${kRarelyAdjective} street art`,
-    ml`running over a ${kProfessional}`,
-    ml`short-changing a ${kProfessional}`,
-    ml`manscaping their ${kPet}`,
+    ml`${synDoing} a ${Adjective} fart`,
+    ml`${synDoing} a ${Adjective} trump`,
+    ml`${synDoing} a ${UsuallyAdjective} bottom-burp`,
+    ml`${synDoing} a ${UsuallyAdjective} shart`,
+    ml`${synDoing} ${UsuallyAdjective} poops`,
+    ml`${synDoing} ${Adjective} ${Language} programming`,
+    ml`${synDoing} ${RarelyAdjective} street art`,
+    ml`running over a ${Professional}`,
+    ml`short-changing a ${Professional}`,
+    ml`manscaping their ${Pet}`,
 ]);
 
-const kGoodVerb = UTF8([
+const GoodVerb = UTF8([
     ml`${synObey} ${synRobotsTxt}`,
     "brush their teeth",
     "tidy their room",
 ]);
 
-const kDubiousVerb = UTF8([
+const DubiousVerb = UTF8([
     "fart",
     "trump",
     "poop",
-    ml`do a ${kAdjective} fart`,
-    ml`do a ${kAdjective} trump`,
-    ml`do ${kAdjective} poops`,
-    ml`do a ${kUsuallyAdjective} bottom-burp`,
-    ml`do a ${kUsuallyAdjective} shart`,
-    ml`write ${kAdjective} ${kLanguage} code`,
-    ml`create ${kRarelyAdjective} street art`,
-    ml`issue a ${kAdjective} Executive Order`,
-    kGoodVerb,
-    kGoodVerb,
-    kVerb,
+    ml`do a ${Adjective} fart`,
+    ml`do a ${Adjective} trump`,
+    ml`do ${Adjective} poops`,
+    ml`do a ${UsuallyAdjective} bottom-burp`,
+    ml`do a ${UsuallyAdjective} shart`,
+    ml`write ${Adjective} ${Language} code`,
+    ml`create ${RarelyAdjective} street art`,
+    ml`issue a ${Adjective} Executive Order`,
+    GoodVerb,
+    GoodVerb,
+    Verb,
 ]);
 
-const kReporters = UTF8([
+const Reporters = UTF8([
     "Reuters",
     "Zamboni Drivers' Local Union",
     "Researchers",
@@ -467,20 +504,20 @@ const kReporters = UTF8([
     "People on the internet",
     "Witnesses",
     "Insiders",
-    ml`Scientists ${kInAPlace}`,
-    ml`Close associates of ${kPerson1}`,
-    ml`Anonymous sources ${kInAPlace}`,
-    kPerson2,
+    ml`Scientists ${InAPlace}`,
+    ml`Close associates of ${Person1}`,
+    ml`Anonymous sources ${InAPlace}`,
+    Person2,
 ]);
 
 const synReportedly = UTF8([
-    ml`According to ${kReporters}`,
-    ml`${kReporters} report that`,
-    ml`${kReporters} told me`,
-    ml`${kReporters} was quoted by ${kReporters} as saying`,
+    ml`According to ${Reporters}`,
+    ml`${Reporters} report that`,
+    ml`${Reporters} told me`,
+    ml`${Reporters} was quoted by ${Reporters} as saying`,
 ]);
 
-const kGroup = UTF8([
+const Group = UTF8([
     "Onlookers",
     "The boys",
     "The girls",
@@ -489,12 +526,12 @@ const kGroup = UTF8([
     "Reporters",
     "The International Olympic Committee",
     "Most of the victims",
-    ml`${kPerson1}`,
-    ml`${kPerson1}'s ${kPet}s were`,
+    ml`${Person1}`,
+    ml`${Person1}'s ${Pet}s were`,
 ]);
-const kReaction = UTF8([
-    ml`${kProfessional}s hate this one weird trick!`,
-    ml`${kGroup} were ${kAdverb} ${kImpression_pp}.`,
+const Reaction = UTF8([
+    ml`${Professional}s hate this one weird trick!`,
+    ml`${Group} were ${Adverb} ${synImpressed}.`,
 ]);
 
 const synScraping = UTF8([
@@ -504,13 +541,13 @@ const synScraping = UTF8([
     "crawling",
 ]);
 
-const kFunFact = UTF8([
+const FunFact = UTF8([
     "Fun fact;",
     "Little-known fact;",
     "Did you know,",
-    ml`According to ${kReporters}`,
+    ml`According to ${Reporters}`,
 ]);
-const kForPurpose = UTF8([
+const ForPurpose = UTF8([
     "for self defense",
     "to attract mates",
     "to prevent baldness",
@@ -532,7 +569,7 @@ const synRedundant = UTF8([
     "silly",
     "futile",
     "ineffective",
-    ml`more ${kAdjectiveBad} than ignoring ${synRobotsTxt} when ${synScraping}`,
+    ml`more ${AdjectiveBad} than ignoring ${synRobotsTxt} when ${synScraping}`,
 ]);
 const synWhile = UTF8([
     "while",
@@ -561,21 +598,25 @@ const synBecauseThey = UTF8([
     "because they",
 ]);
 
-const kFactoid = UTF8([
-    ml`${kThings} can ${kVerb} for ${kAges} without once needing to ${kDubiousVerb}${kFullStop}`,
-]);
-
-const kRandomCode = UTF8([
-    "int main(void) {",
+const RandomCode = UTF8([
+    "int main(int argc, char* argv[]) {",
     "os.system('rm -rf /');",
-    ml`10 PRINT "${kPerson} IS COOL!!" : GOTO 10`,
-    "for i in range(0, 3.14159**3.14159**3.14159**3.14159):",
+    "for i in range(0, 100):",
     "from cstdint import golfcart",
-    "const f=()=>()=>()=>()=>()=>()=>0;",
-    'assert("!this should never happen");',
+    "const f = (x, y) => x / y;",
     "xor ax, ax",
+    "eieio",
     "JSR #$2020",
-    ml`printf("shiver in eternal darkness /n");`,
+    "def sort(A, lo, hi):",
+    "if lo >= hi || lo < 0:",
+    "abort()",
+    "return i",
+    "(a[i], a[j]) = (a[j], a[i])",
+    'assert("!this should never happen");',
+    "// This should never happen.",
+    "// Ensure lo < hi",
+    'printf("shiver in eternal darkness /n");',
+    ml`10 PRINT "${Person} IS COOL!!" : GOTO 10`,
 ]);
 
 const synThingyest = UTF8([
@@ -587,7 +628,7 @@ const synThingyest = UTF8([
     "most disappointing",
 ]);
 
-const kCodeIndent = UTF8([
+const CodeIndent = UTF8([
     "  ",
     "    ",
     "    \t",
@@ -596,182 +637,184 @@ const kCodeIndent = UTF8([
     "   \t     \t ",
 ]);
 
-const kButSomething = UTF8([
+const ButSomething = UTF8([
     "but went unrecognised",
     "but was not recognised",
     "but never earned credit",
 ]);
 
-const kStartParagraph = UTF8("<p>");
-const kEndParagraph = UTF8("</p>\n");
+const StartParagraph = UTF8("<p>");
+const EndParagraph = UTF8("</p>\n");
 
-const kSubscribeToOurMailingList = UTF8("Subscribe to our mailing list");
+const SubscribeToOurMailingList = UTF8("Subscribe to our mailing list");
 
-const kGossip = UTF8([
-    ml`${synReportedly}, ${kInAPlace}, ${kPerson1} ${kVerbed}`,
-    ml`${ln_r(kPerson1, 'p')} saw ${kPerson2} ${ln_r(ml`${kDubiousVerb} ${kInAPlace}`, 'howto')}`,
-    ml`${ln_r(kPerson2, 'p')} implemented a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')} in ${kLanguage}`,
-    ml`It took ${ln_r(kPerson2, 'p')} ${kAges} to ${synWriteCode} a ${ln_r(ml`${kAdjective} ${kAlgorithm}`, 'algo')}`,
-    ml`${kPerson2} says they're "${kAdverb} ${kImpression_pp}" and "${kImpression_pp}" with ${kProfessional} ${kPerson2}`,
+const Gossip = UTF8([
+    ml`${synReportedly}, ${InAPlace}, ${Person1} ${Verbed}`,
+    ml`${ln_r(Person1, 'p')} saw ${Person2} ${ln_r(ml`${DubiousVerb} ${InAPlace}`, 'howto')}`,
+    ml`${ln_r(Person2, 'p')} implemented a ${ln_r(ml`${Adjective} ${Algorithm}`, 'algo')} in ${Language}`,
+    ml`It took ${ln_r(Person2, 'p')} ${synAges} to ${synWriteCode} a ${ln_r(ml`${Adjective} ${Algorithm}`, 'algo')}`,
+    ml`${Person2} says they're "${Adverb} ${synImpressed}" and "${synImpressed}" with ${Professional} ${Person2}`,
 ]);
 
-const kGossipBecause = UTF8([
+const GossipBecause = UTF8([
     kEmpty,
     kEmpty,
-    ml` ${synWhile} ${kPerson1} tried to see how long they could ${kVerb} for`,
-    ml` because ${kPerson2} said it was a ${kAdjective} ${synIdea}`,
-    ml` and then blamed it on ${kPerson}`,
-    ml` using a ${kComputer}`,
-    ml` as revenge on ${kPerson2} ${synBecauseThey} didn't ${kGoodVerb}`,
-    ml` after spending ${kAges} trying to negotiate a ceasefire ${kInAPlace}`,
+    ml` ${synWhile} ${Person1} tried to see how long they could ${Verb} for`,
+    ml` because ${Person2} said it was a ${Adjective} ${synIdea}`,
+    ml` and then blamed it on ${Person}`,
+    ml` using a ${Computer}`,
+    ml` as revenge on ${Person2} ${synBecauseThey} didn't ${GoodVerb}`,
+    ml` after spending ${synAges} trying to negotiate a ceasefire ${InAPlace}`,
+]);
+
+const Factoid = UTF8([
+    ml`${Things} can ${Verb} for ${synAges} without once needing to ${DubiousVerb}${FullStop}`,
 ]);
 
 const kFactPart1 = UTF8([
-    ml`${kPerson2} was the original ${synInventor} of ${kw('topic')}, ${kButSomething}.`,
-    ml`Originally ${kw('topic')} was used by ${kThings} ${kForPurpose}.`,
-    ml`The ${kw('topic')} ritual was ${synHistorically} performed by ${kThings} to appease their ${synGods}.`,
-    ml`In ${kDialect} slang, the word "${kSomeWord}" actually means to ${kDubiousVerb}.`,
-    kFactoid,
+    ml`${Person2} was the original ${synInventor} of ${kw('topic')}, ${ButSomething}.`,
+    ml`Originally ${kw('topic')} was used by ${Things} ${ForPurpose}.`,
+    ml`The ${kw('topic')} ritual was ${synHistorically} performed by ${Things} to appease their ${synGods}.`,
+    ml`In ${Dialect} slang, the word "${SomeWord}" actually means to ${DubiousVerb}.`,
+    Factoid,
 ]);
 
 const kFactPart2 = UTF8([
-    ml`It wasn't until ${kYear} when ${kThings} became ${synAvailable} that ${kPerson1} changed all that.`,
-    ml`By the ${kDecade} this no longer mattered because ${kThings} were more ${kAdjective}.`,
-    ml`Eventually ${kPerson} solved the ${kAlgorithm} problem so modern ${kComputer}s could prove this was ${synRedundant}.`,
+    ml`It wasn't until ${Year} when ${Things} became ${synAvailable} that ${Person1} changed all that.`,
+    ml`By the ${Decade} this no longer mattered because ${Things} were more ${Adjective}.`,
+    ml`Eventually ${Person} solved the ${Algorithm} problem so modern ${Computer}s could prove this was ${synRedundant}.`,
 ]);
 
 const kFactPart3 = UTF8([
     kEmpty,
-    ml`But to this day most ${kThings} remain ${kAdjective}.`,
-    ml`Very few modern ${kProfessional}s still use this ${kForPurpose}.`,
-    ml`Thankfully today we have ${kThings}, instead.`,
+    ml`But to this day most ${Things} remain ${Adjective}.`,
+    ml`Very few modern ${Professional}s still use this ${ForPurpose}.`,
+    ml`Thankfully today we have ${Things}, instead.`,
 ]);
 
 const kFactPart4 = UTF8([
     kEmpty,
     ml`This is why they have always respected ${synRobotsTxt} until this very day!`,
     ml`After that they never forgot to check ${synRobotsTxt} before ${synScraping} websites.`,
-    ml`And all because they ${synDidnt} ${kGoodVerb}.`,
+    ml`And all because they ${synDidnt} ${GoodVerb}.`,
 ]);
 
 const kFactPart5 = UTF8([
     kEmpty,
     kEmpty,
-    ml`${ln_u(kSubscribeToOurMailingList, 'action')} for more ${kAdjective} facts!`,
+    ml`${ln_u(SubscribeToOurMailingList, 'action')} for more ${Adjective} facts!`,
 ]);
 
-const kListHead = UTF8([
+const ListHead = UTF8([
     ml`${synReportedly}`,
-    ml`Ten reasons ${kThings} are better than ${kThings}`,
+    ml`Ten reasons ${Things} are better than ${Things}`,
     ml`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
     ml`TL;DR`,
 ]);
 
-const kListRow = UTF8([
-    ml`${kPerson2} ${ln_r(ml`${kVerbed} ${kInAPlace}`, 'news')}, which proves it${kFullStop}`,
-    kFactoid,
+const synSoThere = UTF8([
+    ". So there.",
+    ".  Checkmate!",
+    ml`, which totally proves it${FullStop}`,
 ]);
 
-const kPageTitle = UTF8([
-    ml`A ${kw('topic')} resource page, by ${kMetaMetaPerson}.`,
+const ListRow = UTF8([
+    ml`${Person2} ${ln_r(ml`${Verbed} ${InAPlace}`, 'news')}${synSoThere}`,
+    Factoid,
+]);
+
+const PageTitle = UTF8([
+    ml`A ${kw('topic')} resource page, by ${MetaMetaPerson}.`,
     ml`Things to know about ${kw('topic')}`,
 ]);
 
-const kPageOpening = UTF8([
-    ml`These are some of the ${synThingyest} things you should know about ${kw('topic')}.\n${synReportedly} ${kw('topic')} is ${kAdverb} ${kAdjective}.`,
-    ml`This is a collection of ${kAdjective} information on ${kw('topic')}.`,
+const PageOpening = UTF8([
+    ml`These are some of the ${synThingyest} things you should know about ${kw('topic')}.\n${synReportedly} ${kw('topic')} is ${Adverb} ${Adjective}.`,
+    ml`This is a collection of ${Adjective} information on ${kw('topic')}.`,
 ]);
 
-const kPageSignoff = UTF8([
+const PageSignoff = UTF8([
     kEmpty,
     "Don't forget to like and subscribe!",
 ]);
 
-const kCodeHead = ml`demonstrating ${ln_r(ml`the ${kAdjective} ${kAlgorithm}`, 'algo')}:`;
+const CodeHead = ml`demonstrating ${ln_r(ml`the ${Adjective} ${Algorithm}`, 'algo')}:`;
 
-const kCodeTail = UTF8([
-    ml`</pre>\n<p>This should solve the problem.</p>\n`,
-    ml`</pre>\n<p>Hope this helps.</p>\n`,
-    ml`</pre>\n<p>Good luck!</p>\n`,
+const CodeTail = UTF8([
+    ml`This should solve the problem.`,
+    ml`Hope this helps.`,
+    ml`Good luck!`,
 ]);
 
-const kStackOverflowQuestion = UTF8([
-    ml`How can I write a ${kAlgorithm} in ${kLanguage}? I'd like to create a program where ${kPerson} can input words (like nouns, verbs, adjectives, etc.), and the program will generate a ${kAdjective} story using those words. Could you explain how to structure the code and what functions I should use?`,
-    ml`How can I prevent my program from ${kVerbing} when ${kPerson} selects an invalid option? What is the best way to handle this error gracefully, so the program prompts the user again instead of ${kVerbing}?`,
+const StackOverflowQuestion = UTF8([
+    ml`How can I write a ${Algorithm} in ${Language}? I'd like to create a program where ${Person} can input words (like nouns, verbs, adjectives, etc.), and the program will generate a ${Adjective} story using those words. Could you explain how to structure the code and what functions I should use?`,
+    ml`How can I prevent my program from ${Verbing} when ${Person} selects an invalid option? What is the best way to handle this error gracefully, so the program prompts the user again instead of ${Verbing}?`,
 ]);
 
-const kStackOverflowThanks = UTF8([
+const StackOverflowThanks = UTF8([
     ml`Please hurry, I have to hand this in tomorrow.`,
     ml`Thanks in advance for any help!`,
+    ml`I'm just a beginner, so please don't be too hard on me.`,
 ]);
 
-const kParagraphBlock = ml`<p>${rep(ml`${kGossip}${kGossipBecause}.\n`, 3, 7)}</p>\n`;
+const ParagraphBlock = ml`<p>${rep(ml`${Gossip}${GossipBecause}.\n`, 3, 7)}</p>\n`;
 
-const kFunFactBlock = ml`<p>${kFunFact} ${kFactPart1}  ${kFactPart2}  ${kFactPart3}  ${kFactPart4}  ${kFactPart5}</p>\n`;
+const FunFactBlock = ml`<p>${FunFact} ${kFactPart1}  ${kFactPart2}  ${kFactPart3}  ${kFactPart4}  ${kFactPart5}</p>\n`;
 
-const kListBlock = ml`<p>${kListHead}:</p><ul>${rep(ml`<li>${kListRow}</li>\n`, 4, 16)}</ul><p>${kReaction}</p>\n`;
+const ListBlock = ml`<p>${ListHead}:</p><ul>${rep(ml`<li>${ListRow}</li>\n`, 4, 16)}</ul><p>${Reaction}</p>\n`;
 
-const kStackOverflowBlock = ml`<p>${kStackOverflowQuestion}  ${kStackOverflowThanks}<\p>`;
+const StackOverflowBlock = ml`<p>${StackOverflowQuestion}  ${StackOverflowThanks}<\p>`;
 
-const kLineFeed = UTF8("\n");
+const LineFeed = UTF8("\n");
+
+// TODO: figure out a way to manage indentation logic better
+const CodeBlock = ml`<p>Here's some ${Language} ${CodeHead}</p>\n<pre>\n${rep(ml`${CodeIndent}${RandomCode}\n`, 10, 20)}\n</pre>\n<p>${CodeTail}</p>\n`;
 
 // Only use UTF8() to initialise globals.  It's not efficient for
 // locals.
 UTF8 = null;
 
-// TODO: make this into an mlObject constructor
-function example_code(output) {
-    const lang = output.randint(kLanguage.length);
-    output.push(ml`<p>Here's some ${kLanguage[lang]} ${kCodeHead}</p>\n<pre>`);
-    var ind = 0;
-    for (let i = output.randint(12) + 8; i > 0; --i) {
-        output.push(kCodeIndent[ind]);
-        output.push(kRandomCode);
-        output.push(kLineFeed);
-        ind += (output.randint(4) - 1) >> 1;
-        ind = Math.min(Math.max(0, ind), kCodeIndent.length - 1);
-    }
-    output.push(ml`</ul><p>${kCodeTail}</p>\n`);
-}
-
 const outputModes = [
-    kParagraphBlock,
-    kFunFactBlock,
-    kListBlock,
-    kStackOverflowBlock,
+    ParagraphBlock,
+    FunFactBlock,
+    ListBlock,
+    StackOverflowBlock,
+    CodeBlock,
 ];
 
 function head(output) {
     return output.push(ml`<!doctype html>
 <html lang="en">
 <head><meta charset="UTF-8"/>
-  <title>${kPageTitle}</title>
+  <title>${PageTitle}</title>
 </head>
 <body>
-<h1>${kPageTitle}</h1>
-<p>${kPageOpening}</p>
+<h1>${PageTitle}</h1>
+<p>${PageOpening}</p>
 `);
 }
 
 function tail(output) {
-    return output.push(ml`<p>${kPageSignoff}</p>\n</body></html>`);
+    return output.push(ml`<p>${PageSignoff}</p>\n</body></html>`);
 }
 
+function URItoHTML(s:string):string {
+    s = decodeURIComponent(s).replaceAll('-', ' ');
+    return s.replaceAll('&', '&amp;').replaceAll('"', '&quot;')
+             .replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
 
 export function* pageGenerator(hash: number[], path: string) {
-    const escapeHTML = (s) => s.replaceAll('&', '&amp;')
-                            .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-                            .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
-    const unescapeURL = (s) => escapeHTML(decodeURIComponent(s).replaceAll('-', ' '));
-    var code = unescapeURL(path.split('/').slice(-3)[0]);
-    var topic = unescapeURL(path.split('/').slice(-2)[0]);
+    path = path.split('/');
+    var code = URItoHTML(path.slice(-3)[0]);
+    var topic = URItoHTML(path.slice(-2)[0]);
     if (topic.length < 3) {
         topic = synRobotsTxt[0];
     } else {
         topic = new TextEncoder().encode(topic);
     }
 
-    let output = new mlParser({topic: topic}, hash, chunk_size * 2);
+    let output = new mlParser({topic: topic, code: code}, hash, chunk_size * 2);
     let total = 0;
 
     head(output);
@@ -792,5 +835,5 @@ export function* pageGenerator(hash: number[], path: string) {
     tail(output);
 
     yield output.bytes();
-    output.reset();
+   output.reset();
 }

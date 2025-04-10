@@ -799,7 +799,9 @@ function tail(output) {
 }
 
 function URItoHTML(s:string):string {
-    s = decodeURIComponent(s).replaceAll('-', ' ');
+    s = decodeURIComponent(s);
+    s = s.slice(-200);
+    s = s.replaceAll('-', ' ');
     return s.replaceAll('&', '&amp;').replaceAll('"', '&quot;')
              .replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
@@ -808,6 +810,7 @@ export function* pageGenerator(hash: number[], path: string) {
     path = path.split('/');
     var code = URItoHTML(path.slice(-3)[0]);
     var topic = URItoHTML(path.slice(-2)[0]);
+    code ||= 'null';
     if (topic.length < 3) {
         topic = synRobotsTxt[0];
     } else {

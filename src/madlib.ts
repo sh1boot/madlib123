@@ -146,6 +146,10 @@ export class mlParser {
                 this.#pushMlTemplate(value);
                 return true;
             case mlLink:
+                if (this.randint(100) >= value.probability) {
+                    value = value.content;
+                    break;
+                }
                 this.#pushLink(value);
                 return true;
             default:
@@ -190,10 +194,6 @@ export class mlParser {
     static kSpanEnd = new TextEncoder().encode('</a>');
     static kSlash = '/'.charCodeAt();
     #pushLink(obj) {
-        if (this.randint(100) >= obj.probability) {
-            this.push(obj.content);
-            return;
-        }
         // TODO: randomly inject hostnames from a list of other generators
         this.data.set(mlParser.kLinkStart, this.length);
         this.length += mlParser.kLinkStart.length;

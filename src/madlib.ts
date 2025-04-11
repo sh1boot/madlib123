@@ -115,35 +115,40 @@ export class mlParser {
     static kOOPS = new TextEncoder().encode("***OOPS***");
     push(value) {
         while (!(value === null || value === undefined)) {
-            // TODO: surely there's a better way!
-            if (value instanceof Uint8Array) {
+            switch (value.constructor) {
+            case Function:
+                value = value(this.rand(), this.keywords);
+                break;
+            case Uint8Array:
                 this.data.set(value, this.length);
                 this.length += value.length;
                 return true;
-            } else if (Array.isArray(value)) {
+            case Array: {
                 let n = this.randint(value.length);
                 value = value[n];
-            } else if (typeof value === 'number') {
+                break;
+            }
+            case Number:
                 this.#pushNumber(value);
                 return true;
-            } else if (value instanceof mlKeyword) {
+            case mlKeyword:
                 value = this.keywords[value.keyword];
-            } else if (value instanceof mlRepeat) {
+                break;
+            case mlRepeat: {
                 let n = this.randint(value.max - value.min) + value.min;
                 for (let i = 0; i < n; ++i) {
                     this.push(value.content);
                 }
                 return true;
-            } else if (typeof value === 'function') {
-                value = value(this.rand(), this.keywords);
-            } else if (value instanceof mlTemplate) {
+            }
+            case mlTemplate:
                 // TODO: inline and flatten, don't recurse
                 this.#pushMlTemplate(value);
                 return true;
-            } else if (value instanceof mlLink) {
+            case mlLink:
                 this.#pushLink(value);
                 return true;
-            } else {
+            default:
                 console.log("value has wrong type:", value);
                 break;
             }

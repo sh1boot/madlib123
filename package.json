@@ -12,12 +12,13 @@
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.7.5",
 		"@cloudflare/workers-types": "^4.20250327.0",
+		"javascript-obfuscator": "^4.1.1",
 		"typescript": "^5.5.2",
 		"vitest": "~3.0.7",
 		"webpack": "^5.38.1",
 		"webpack-cli": "^6.0.1",
 		"webpack-obfuscator": "^3.5.1",
-		"wrangler": "^4.6.0"
+		"wrangler": "^4.10.0"
 	},
 	"dependencies": {
 		"ts-loader": "^9.5.2"

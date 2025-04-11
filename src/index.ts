@@ -104,7 +104,7 @@ function sitemap_xml(origin: string): Response {
 
     var pagelist = [];
     for (let i = 0; i < 1024; ++i) {
-        let cs:string = (i & 1) ? "/cs?crawl=aproved&q=" : "";
+        let cs:string = (i & 1) ? "/cs?crawl=aproved&amp;q=" : "";
         pagelist.push(
 `<url><loc>${origin}${cs}/public/${RandomURIPath(i)}/</loc><lastmod>${kXMLLastModified}</lastmod></url>`);
     }
@@ -119,8 +119,16 @@ export default {
         const url = new URL(request.url);
         const origin = url.origin;
 
-        if (url.pathname == '/robots.txt') return robots_txt(origin);
-        if (url.pathname == '/sitemap.xml') return sitemap_xml(origin);
+        console.log(env);
+
+        if (url.pathname === '/robots.txt') return robots_txt(origin);
+        if (url.pathname === '/sitemap.xml') return sitemap_xml(origin);
+        if (url.pathname.length === 37 && url.pathname.endsWith('.txt')) {
+            const key:string = await env.INDEXNOWKEY.get();
+            if (url.pathname === `/${key}.txt`) {
+                return new Response(key);
+            }
+        }
 
         const ifModifiedSince = new Date(request.headers.get('if-modified-since') ?? 0);
         if (kModificationDate <= ifModifiedSince) {

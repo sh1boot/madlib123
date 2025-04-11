@@ -1,18 +1,22 @@
 const debug = false;
 
-import {ml, kw, ln_r, ln_u, rep, mlParser } from './madlib.ts';
+import {mlParser, mlType, ml, kw, ln_r, ln_u, rep } from './madlib';
 
-var UTF8 = (v) => {
+const UTF8 = (v:(string|mlType)[]):(Uint8Array|mlType)[] => {
     const utf8enc = new TextEncoder();
-    if (typeof v === 'string') return utf8enc.encode(v);
     return v.map((s) => (typeof s === 'string') ? utf8enc.encode(s) : s);
+};
+
+const UTF8s = (s:string):Uint8Array => {
+    const utf8enc = new TextEncoder();
+    return utf8enc.encode(s);
 };
 
 const kEmpty = new Uint8Array(0);
 
-const rarely = (s, t = kEmpty) => [ s, t, t, t ];
-const evenly = (s, t = kEmpty) => [ s, t ];
-const usually = (s, t = kEmpty) => rarely(t, s);
+const rarely = (s:mlType, t:mlType = kEmpty):mlType[] => [ s, t, t, t ];
+const evenly = (s:mlType, t:mlType = kEmpty):mlType[] => [ s, t ];
+const usually = (s:mlType, t:mlType = kEmpty):mlType[] => rarely(t, s);
 
 const Person = UTF8([
     "Donald Trump",
@@ -239,14 +243,14 @@ const Person2 = UTF8([
     MetaMetaPerson,
 ]);
 
-const Year = (randnum) => 1700 + (randnum % 320);
-const Decade = ml`1${(randnum) => randnum % 32 + 70}0's`;
+const Year = (randnum:number) => 1700 + (randnum % 320);
+const Decade = ml`1${(randnum:number) => randnum % 32 + 70}0's`;
 const synAges = UTF8([
     "months",
     "weeks",
     "days",
     "hours",
-    ml`${(randnum) => randnum % 3601 + 1} seconds`,
+    ml`${(randnum:number) => randnum % 3601 + 1} seconds`,
 ]);
 
 const Computer = UTF8([
@@ -641,7 +645,7 @@ const ButSomething = UTF8([
     "but never earned credit",
 ]);
 
-const SubscribeToOurMailingList = UTF8("Subscribe to our mailing list");
+const SubscribeToOurMailingList = UTF8s("Subscribe to our mailing list");
 
 const Gossip = UTF8([
     ml`${synReportedly}, ${InAPlace}, ${Person1} ${Verbed}`,
@@ -763,10 +767,6 @@ const StackOverflowBlock = ml`<p>${StackOverflowQuestion}\n${StackOverflowThanks
 // TODO: figure out a way to manage indentation logic better
 const CodeBlock = ml`<p>Here's some ${Language} ${CodeHead}</p>\n<pre>\n${rep(ml`${CodeIndent}${RandomCode}\n`, 10, 20)}\n</pre>\n<p>${CodeTail}</p>\n`;
 
-// Only use UTF8() to initialise globals.  It's not efficient for
-// locals.
-UTF8 = null;
-
 const outputModes = [
     ParagraphBlock,
     FunFactBlock,
@@ -775,7 +775,7 @@ const outputModes = [
     CodeBlock,
 ];
 
-function head(output) {
+function head(output:mlParser) {
     return output.push(ml`<!doctype html>
 <html lang="en">
 <head><meta charset="UTF-8"/>
@@ -787,7 +787,7 @@ function head(output) {
 `);
 }
 
-function tail(output) {
+function tail(output:mlParser) {
     return output.push(ml`<p>${PageSignoff}</p>\n</body></html>`);
 }
 
@@ -799,18 +799,24 @@ function URItoHTML(s:string):string {
              .replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-export function* pageGenerator(hash: number[], path: string, goal_size:number = 1048500, chunk_size: number = 16384) {
-    path = path.split('/');
-    var code = URItoHTML(path.slice(-3)[0]);
-    var topic = URItoHTML(path.slice(-2)[0]);
-    code ||= 'null';
-    if (topic.length < 3) {
-        topic = synRobotsTxt[0];
-    } else {
-        topic = new TextEncoder().encode(topic);
-    }
+export function* pageGenerator(
+        hash: Uint32Array,
+        path: string,
+        goal_size:number = 1048500,
+        chunk_size: number = 16384,
+        root: string|undefined = undefined) {
+    path = URItoHTML(path);
+    const enc = new TextEncoder();
+    let vpath:string[] = path.split('/');
+    let code = vpath.slice(-3)[0];
+    let topic = vpath.slice(-2)[0];
+    let kw = {
+        topic: topic.length > 3 ? enc.encode(topic) : synRobotsTxt[0],
+        code: code.length > 0 ? enc.encode(code) : kEmpty,
+        root: root?.length ? enc.encode(root) : kEmpty,
+    };
+    let output = new mlParser(kw, hash, chunk_size, 8192);
 
-    let output = new mlParser({topic: topic, code: code}, hash, chunk_size * 2);
     let total = 0;
 
     head(output);

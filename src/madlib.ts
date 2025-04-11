@@ -1,20 +1,15 @@
-const debug = false;
+const utf8enc = new TextEncoder();
+const UTF8 = (s:string):Uint8Array => utf8enc.encode(s);
 
 class mlTemplate {
-    static utf8cache = new WeakMap();
-    static utf8enc = new TextEncoder();
-    strings:Uint8Array[] = null;
-    args: object[] = null;
+    static readonly utf8cache = new WeakMap();
+    readonly strings:Uint8Array[];
+    readonly args:mlType[];
 
-    constructor(strings:strings[], args:object[]) {
-        if (debug) {
-            const badargs = args.some((x) => x === null || x === undefined || typeof x === 'string');
-            if (badargs) {
-                console.log(strings, 'bad ml args:', args);
-            }
-        }
+    constructor(strings:TemplateStringsArray, args:mlType[]) {
         if (!mlTemplate.utf8cache.has(strings)) {
-            mlTemplate.utf8cache.set(strings, strings.map((s) => mlTemplate.utf8enc.encode(s)));
+            const enc = new TextEncoder();
+            mlTemplate.utf8cache.set(strings, strings.map((s:string) => enc.encode(s)));
         }
         this.strings = mlTemplate.utf8cache.get(strings);
         this.args = args;
@@ -22,28 +17,28 @@ class mlTemplate {
 };
 
 class mlKeyword {
-    keyword:string = null;
+    readonly keyword:string;
     constructor(keyword:string) {
         this.keyword = keyword;
     }
 };
 
 class mlLink {
-    static utf8enc = new TextEncoder();
-    content:mlTemplate = null;
-    code:Uint8Array = null;
-    probability:number = 100;
-    constructor(content:mlTemplate, code:string, probability:number = 100) {
+    readonly content:mlType;  // TODO: maybe restrict to mlTemplate?
+    readonly code:Uint8Array;
+    readonly probability:number;
+    constructor(content:mlType, code:string, probability:number = 100) {
+        const enc = new TextEncoder();
         this.content = content;
-        this.code = mlLink.utf8enc.encode(code);
+        this.code = enc.encode(code);
         this.probability = probability;
     }
 };
 
 class mlRepeat {
-    content:mlTemplate = null;
-    min:number = 0;
-    max:number = 0;
+    readonly content:mlTemplate;
+    readonly min:number = 0;
+    readonly max:number = 0;
     constructor(content:mlTemplate, min:number, max:number) {
         this.content = content;
         this.min = min || 0;
@@ -51,24 +46,27 @@ class mlRepeat {
     }
 };
 
-export const ml = (strings, ...args) => new mlTemplate(strings, args);
-export const kw = (keyword) => new mlKeyword(keyword);
-export const rep = (s, min, max) => new mlRepeat(s, min, max);
-export const ln_r = (s, c) => new mlLink(s, c, 25);
-export const ln_u = (s, c) => new mlLink(s, c, 75);
+interface keywordType {
+    [key: string]: mlType;
+}
+type mlFunction = (randnum:number, keywords:object|undefined)=>mlType;
+export type mlType = Uint8Array | mlTemplate | mlFunction | number | mlKeyword | mlLink | mlRepeat | mlType[];
+
+export const ml = (strings:TemplateStringsArray, ...args:mlType[]) => new mlTemplate(strings, args);
+export const kw = (keyword:string) => new mlKeyword(keyword);
+export const rep = (s:mlTemplate, min:number, max:number) => new mlRepeat(s, min, max);
+export const ln_r = (s:mlType, c:string) => new mlLink(s, c, 25);
+export const ln_u = (s:mlType, c:string) => new mlLink(s, c, 75);
 // TODO: back(n)
 
 export class mlParser {
-    data:Uint8Array = null;
-    rngstate:Uint32Array = null;
-    size:number = 0;
+    readonly keywords:keywordType;
+    data:Uint8Array;
+    rngstate:Uint32Array;
     length:number = 0;
-    enc:TextEncoder = new TextEncoder();
-    keywords:object = null;
 
-    constructor(keywords:object, hash: Uint32Array, size: number, margin: number = 1024) {
+    constructor(keywords:keywordType, hash: Uint32Array, size: number, margin: number = 1024) {
         this.data = new Uint8Array(size + margin);
-        this.size = size;
         this.rngstate = hash;
         this.rngstate[6] |= 1;
         this.rngstate[7] |= 1;
@@ -79,8 +77,8 @@ export class mlParser {
         this.length = 0;
     }
 
-    bytes(n: number = null) {
-        if (n === null || n > this.length) n = this.length;
+    bytes(n:number = -1) {
+        if (n < 0 || n > this.length) n = this.length;
         return this.data.subarray(0, n);
     }
 
@@ -112,40 +110,43 @@ export class mlParser {
         return r % n;
     }
 
-    static kOOPS = new TextEncoder().encode("***OOPS***");
-    push(value) {
-        while (!(value === null || value === undefined)) {
-            switch (value.constructor) {
-            case Function:
+    static readonly kOOPS = UTF8("***OOPS***");
+    push(value:mlType):boolean {
+        let ok = true;
+        while (ok) {
+            switch (value?.constructor) {
+            case Function: value = <mlFunction> value;
                 value = value(this.rand(), this.keywords);
                 break;
-            case Uint8Array:
+            case Uint8Array: value = <Uint8Array> value;
                 this.data.set(value, this.length);
                 this.length += value.length;
                 return true;
-            case Array: {
-                let n = this.randint(value.length);
-                value = value[n];
+            case Array: value = <mlType[]> value;
+                {
+                    let n = this.randint(value.length);
+                    value = value[n];
+                }
                 break;
-            }
-            case Number:
+            case Number: value = <number> value;
                 this.#pushNumber(value);
                 return true;
-            case mlKeyword:
-                value = this.keywords[value.keyword];
+            case mlKeyword: value = <mlKeyword> value;
+                value = this.keywords[value.keyword] ?? mlParser.kOOPS;
                 break;
-            case mlRepeat: {
-                let n = this.randint(value.max - value.min) + value.min;
-                for (let i = 0; i < n; ++i) {
-                    this.push(value.content);
+            case mlRepeat: value = <mlRepeat> value;
+                {
+                    let n = this.randint(value.max - value.min) + value.min;
+                    for (let i = 0; i < n; ++i) {
+                        this.push(value.content);
+                    }
                 }
                 return true;
-            }
-            case mlTemplate:
+            case mlTemplate: value = <mlTemplate> value;
                 // TODO: inline and flatten, don't recurse
                 this.#pushMlTemplate(value);
                 return true;
-            case mlLink:
+            case mlLink: value = <mlLink> value;
                 if (this.randint(100) >= value.probability) {
                     value = value.content;
                     break;
@@ -154,7 +155,7 @@ export class mlParser {
                 return true;
             default:
                 console.log("value has wrong type:", value);
-                break;
+                ok = false;
             }
         }
         // This should never happen
@@ -164,7 +165,7 @@ export class mlParser {
         return false;
     }
 
-    #pushMlTemplate(input) {
+    #pushMlTemplate(input:mlTemplate):void {
         // TODO: keep a list of push stop-start pairs for
         // use by back-references.
         if (input.strings[0].length) this.data.set(input.strings[0], this.length);
@@ -175,7 +176,7 @@ export class mlParser {
             this.length += input.strings[i + 1].length;
         }
     }
-    #pushNumber(n:number) {
+    #pushNumber(n:number):void {
         let tmp = this.length + 16;
         let end = tmp;
         do {
@@ -188,12 +189,12 @@ export class mlParser {
             this.data[this.length++] = this.data[++tmp];
         }
     }
-    static kBadChars = new Uint32Array([0xffffffff, 0xfc00987d, 0x78000001, 0xa8000001]);
-    static kLinkStart = new TextEncoder().encode('<a href="/');
-    static kLinkEnd = new TextEncoder().encode('/">');
-    static kSpanEnd = new TextEncoder().encode('</a>');
-    static kSlash = '/'.charCodeAt();
-    #pushLink(obj) {
+    static readonly kBadChars = new Uint32Array([0xffffffff, 0xfc00987d, 0x78000001, 0xa8000001]);
+    static readonly kLinkStart = UTF8('<a href="/');
+    static readonly kLinkEnd = UTF8('/">');
+    static readonly kSpanEnd = UTF8('</a>');
+    static readonly kSlash = 47;
+    #pushLink(obj:mlLink):void {
         // TODO: randomly inject hostnames from a list of other generators
         this.data.set(mlParser.kLinkStart, this.length);
         this.length += mlParser.kLinkStart.length;

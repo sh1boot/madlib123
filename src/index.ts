@@ -20,7 +20,7 @@ const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-01";
 const kModificationDate = new Date(kLastModified);
 
-import { pageGenerator } from "./english.ts";
+import { pageGenerator } from "./english";
 
 
 const html_headers = new Headers({
@@ -93,10 +93,10 @@ const kPet = [
 ];
 
 function sitemap_xml(origin: string): Response {
-    const escapeURL = (s) => encodeURIComponent(s.replaceAll(' ', '-'));
+    const escapeURL = (s:string) => encodeURIComponent(s.replaceAll(' ', '-'));
     function RandomURIPath(n: number): string {
-        let words = [];
-        [kAdverb, kAdjective, kPet].forEach((v:strings[]) => {
+        let words:string[] = [];
+        [kAdverb, kAdjective, kPet].forEach((v:string[]) => {
             words.push(v[n % v.length | 0]);
             n = n / v.length >>> 0;
         });
@@ -122,7 +122,7 @@ export default {
         if (url.pathname == '/robots.txt') return robots_txt(origin);
         if (url.pathname == '/sitemap.xml') return sitemap_xml(origin);
 
-        const ifModifiedSince = new Date(request.headers.get('if-modified-since')) || 0;
+        const ifModifiedSince = new Date(request.headers.get('if-modified-since') ?? 0);
         if (kModificationDate <= ifModifiedSince) {
             return new Response(null, { status: 304 });
         }
@@ -131,8 +131,7 @@ export default {
         }
 
         const enc = new TextEncoder();
-        const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(request.url));
-        var hash: number[] = Array.from(new Uint32Array(hashBuffer));
+        const hash = new Uint32Array(await crypto.subtle.digest("SHA-256", enc.encode(request.url)));
 
         var total = 0;
         const generator = pageGenerator(hash, url.pathname, default_size, default_chunk);
@@ -145,7 +144,7 @@ export default {
                 } else {
                     total += value.length;
                     if (debug) {
-                        const printable = (s) => new TextDecoder().decode(s).replaceAll(/[\u0000-\u001f\u007f-\u009f]/g, '.');
+                        const printable = (s:Uint8Array):string => new TextDecoder().decode(s).replaceAll(/[\u0000-\u001f\u007f-\u009f]/g, '.');
                         const front = printable(value.subarray(0, Math.min(value.length, 16)));
                         const back = printable(value.subarray(Math.max(0, value.length - 16)));
                         console.log('enqueue:', value.length, total, `"${front}" ... "${back}"`);

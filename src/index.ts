@@ -12,6 +12,8 @@
  */
 
 const debug = false;
+const default_size = 200000;
+const default_chunk = 16384;
 
 // TODO: pluck this from git metadata or something?
 const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
@@ -133,7 +135,7 @@ export default {
         var hash: number[] = Array.from(new Uint32Array(hashBuffer));
 
         var total = 0;
-        const generator = pageGenerator(hash, url.pathname);
+        const generator = pageGenerator(hash, url.pathname, default_size, default_chunk);
         const stream = new ReadableStream({
             async pull(controller) {
                 const { value, done } = generator.next();

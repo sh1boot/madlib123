@@ -1,6 +1,4 @@
 const debug = false;
-const chunk_size = 16384;
-const goal_size = 200000;
 
 import {ml, kw, ln_r, ln_u, rep, mlParser } from './madlib.ts';
 
@@ -801,7 +799,7 @@ function URItoHTML(s:string):string {
              .replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-export function* pageGenerator(hash: number[], path: string) {
+export function* pageGenerator(hash: number[], path: string, goal_size:number = 1048500, chunk_size: number = 16384) {
     path = path.split('/');
     var code = URItoHTML(path.slice(-3)[0]);
     var topic = URItoHTML(path.slice(-2)[0]);

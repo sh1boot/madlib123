@@ -132,8 +132,12 @@ export class mlParser {
                 this.#pushNumber(value);
                 return true;
             case mlKeyword: value = <mlKeyword> value;
-                value = this.keywords[value.keyword] ?? mlParser.kOOPS;
-                break;
+                if (value.keyword in this.keywords) {
+                    value = this.keywords[value.keyword];
+                    break;
+                }
+                // An optimistic (do-nothing) exit to what is actually a failure.
+                return true;
             case mlRepeat: value = <mlRepeat> value;
                 {
                     let n = this.randint(value.max - value.min) + value.min;
@@ -190,18 +194,12 @@ export class mlParser {
         }
     }
     static readonly kBadChars = new Uint32Array([0xffffffff, 0xfc00987d, 0x78000001, 0xa8000001]);
-    static readonly kLinkStart = UTF8('<a href="/');
+    static readonly kLinkStart = ml`<a href="${kw('root')}/${(r:number)=>r>>>16}/${(r:number)=>r>>>16}/`;
     static readonly kLinkEnd = UTF8('/">');
     static readonly kSpanEnd = UTF8('</a>');
     static readonly kSlash = 47;
     #pushLink(obj:mlLink):void {
-        // TODO: randomly inject hostnames from a list of other generators
-        this.data.set(mlParser.kLinkStart, this.length);
-        this.length += mlParser.kLinkStart.length;
-        this.#pushNumber(this.rand() & 0xffff);
-        this.data[this.length++] = mlParser.kSlash;
-        this.#pushNumber(this.rand() & 0xffff);
-        this.data[this.length++] = mlParser.kSlash;
+        this.push(mlParser.kLinkStart);
         if (obj.code) {
             this.data.set(obj.code, this.length);
             this.length += obj.code.length;

@@ -1,6 +1,6 @@
 const debug = false;
 
-class mlObject {
+class mlTemplate {
     static utf8cache = new WeakMap();
     static utf8enc = new TextEncoder();
     strings:Uint8Array[] = null;
@@ -13,10 +13,10 @@ class mlObject {
                 console.log(strings, 'bad ml args:', args);
             }
         }
-        if (!mlObject.utf8cache.has(strings)) {
-            mlObject.utf8cache.set(strings, strings.map((s) => mlObject.utf8enc.encode(s)));
+        if (!mlTemplate.utf8cache.has(strings)) {
+            mlTemplate.utf8cache.set(strings, strings.map((s) => mlTemplate.utf8enc.encode(s)));
         }
-        this.strings = mlObject.utf8cache.get(strings);
+        this.strings = mlTemplate.utf8cache.get(strings);
         this.args = args;
     }
 };
@@ -30,10 +30,10 @@ class mlKeyword {
 
 class mlLink {
     static utf8enc = new TextEncoder();
-    content:mlObject = null;
+    content:mlTemplate = null;
     code:Uint8Array = null;
     probability:number = 100;
-    constructor(content:mlObject, code:string, probability:number = 100) {
+    constructor(content:mlTemplate, code:string, probability:number = 100) {
         this.content = content;
         this.code = mlLink.utf8enc.encode(code);
         this.probability = probability;
@@ -41,17 +41,17 @@ class mlLink {
 };
 
 class mlRepeat {
-    content:mlObject = null;
+    content:mlTemplate = null;
     min:number = 0;
     max:number = 0;
-    constructor(content:mlObject, min:number, max:number) {
+    constructor(content:mlTemplate, min:number, max:number) {
         this.content = content;
         this.min = min || 0;
         this.max = max || min || 10;
     }
 };
 
-export const ml = (strings, ...args) => new mlObject(strings, args);
+export const ml = (strings, ...args) => new mlTemplate(strings, args);
 export const kw = (keyword) => new mlKeyword(keyword);
 export const rep = (s, min, max) => new mlRepeat(s, min, max);
 export const ln_r = (s, c) => new mlLink(s, c, 25);
@@ -136,7 +136,7 @@ export class mlParser {
                 return true;
             } else if (typeof value === 'function') {
                 value = value(this.rand(), this.keywords);
-            } else if (value instanceof mlObject) {
+            } else if (value instanceof mlTemplate) {
                 // TODO: inline and flatten, don't recurse
                 this.#pushMlTemplate(value);
                 return true;

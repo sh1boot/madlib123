@@ -643,9 +643,6 @@ const ButSomething = UTF8([
     "but never earned credit",
 ]);
 
-const StartParagraph = UTF8("<p>");
-const EndParagraph = UTF8("</p>\n");
-
 const SubscribeToOurMailingList = UTF8("Subscribe to our mailing list");
 
 const Gossip = UTF8([
@@ -763,9 +760,7 @@ const FunFactBlock = ml`<p>${FunFact} ${kFactPart1}  ${kFactPart2}  ${kFactPart3
 
 const ListBlock = ml`<p>${ListHead}:</p><ul>${rep(ml`<li>${ListRow}</li>\n`, 4, 16)}</ul><p>${Reaction}</p>\n`;
 
-const StackOverflowBlock = ml`<p>${StackOverflowQuestion}  ${StackOverflowThanks}<\p>`;
-
-const LineFeed = UTF8("\n");
+const StackOverflowBlock = ml`<p>${StackOverflowQuestion}\n${StackOverflowThanks}</p>\n`;
 
 // TODO: figure out a way to manage indentation logic better
 const CodeBlock = ml`<p>Here's some ${Language} ${CodeHead}</p>\n<pre>\n${rep(ml`${CodeIndent}${RandomCode}\n`, 10, 20)}\n</pre>\n<p>${CodeTail}</p>\n`;

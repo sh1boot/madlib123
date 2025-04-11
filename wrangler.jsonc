@@ -10,6 +10,9 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+    "build": {
+        "command": "npx webpack"
+    },
 	"assets": {
 		"binding": "ASSETS",
 		"directory": "./public"

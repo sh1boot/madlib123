@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+        "outDir": "./dist/",
+        "noImplicitAny": true,
+		"module": "es2022",
+		"target": "es2021",
+		"lib": ["es2021", "dom"],
+		"jsx": "react-jsx",
+		"moduleResolution": "Bundler",
+		"resolveJsonModule": true,
+		"allowJs": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true
+	},
+	"files": [
+        "./src/unpack.ts",
+        "./src/english.ts",
+        "./src/madlib.ts"
+    ]
+}

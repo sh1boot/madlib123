@@ -41,7 +41,7 @@ function robots_txt(origin: string): Response {
 
 user-agent: *
 Allow: /public/
-Allow: /cs?crawl=approved*
+Allow: /cs?crawl=allowed*
 Allow: /sitemap.xml
 
 user-agent: *
@@ -104,7 +104,7 @@ function sitemap_xml(origin: string): Response {
 
     var pagelist = [];
     for (let i = 0; i < 1024; ++i) {
-        let cs:string = (i & 1) ? "/cs?crawl=aproved&amp;q=" : "";
+        let cs:string = (i & 1) ? "/cs?crawl=allowed&amp;q=" : "";
         pagelist.push(
 `<url><loc>${origin}${cs}/public/${RandomURIPath(i)}/</loc><lastmod>${kXMLLastModified}</lastmod></url>`);
     }

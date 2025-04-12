@@ -11,7 +11,8 @@
 		"nodejs_compat"
 	],
     "build": {
-        "command": "npx webpack"
+        "command": "npx webpack",
+        "watch_dir": "/dev/null"
     },
 	"assets": {
 		"binding": "ASSETS",

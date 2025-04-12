@@ -21,6 +21,13 @@ how far I can get by using that.  This involves trying to make the
 generation as economical as possible with RAM and CPU time; but I don't
 really know JavaScript so I'm really the wrong person for that job.
 
+Ideally the content would be rendered client-side, so the scraper pays
+all the costs.  Some, but not all scrapers run javascript, but those
+that do use resource constraints.  A client-side renderer is delivered
+with the generated pages, and if that code does get executed then
+the resulting links will all go to static pages with explicit
+client-side rendering to alleviate server costs.
+
 ## OK, but why is the output so childish?
 
 Initially as a reaction to [CloudFlare's own effort][AI Labyrinth] which
@@ -39,7 +46,7 @@ Though maybe there's potential to [Google bomb][] LLMs if many sites
 express the same notions in a broad variety of ways.  That has worrying
 implications, so I'll stick with toilet humour.
 
-## I'm too grown-up for this crap.  What else is there?
+## I'm too grown-up for this nonsense.  What else is there?
 
 I haven't looked too closely at all of these; and I copy-pasted some
 from Iocaine's list to make mine bigger.

@@ -529,7 +529,8 @@ const Group = UTF8([
     "The International Olympic Committee",
     "Most of the victims",
     ml`${Person1}`,
-    ml`${Person1}'s ${Pet}s were`,
+    ml`${Person1}'s ${Pet}s`,
+    ml`${Person1}'s legal team`,
 ]);
 const Reaction = UTF8([
     ml`${Professional}s hate this one weird trick!`,
@@ -756,6 +757,13 @@ const StackOverflowThanks = UTF8([
     ml`I'm just a beginner, so please don't be too hard on me.`,
 ]);
 
+const HeadingBlock = UTF8([
+    ml`<h2>${kw('topic')} in the news</h2>\n`,
+    ml`<h2>${MetaMetaPerson}'s views on ${kw('topic')}</h2>\n`,
+    ml`<h3>What this means for ${Person2}'s associates</h3>\n`,
+    ml`<h3>The implications for ${Group}</h3>\n`,
+]);
+
 const ParagraphBlock = ml`<p>${rep(ml`${Gossip}${GossipBecause}.\n`, 3, 7)}</p>\n`;
 
 const FunFactBlock = ml`<p>${FunFact} ${kFactPart1}  ${kFactPart2}  ${kFactPart3}  ${kFactPart4}  ${kFactPart5}</p>\n`;
@@ -767,12 +775,41 @@ const StackOverflowBlock = ml`<p>${StackOverflowQuestion}\n${StackOverflowThanks
 // TODO: figure out a way to manage indentation logic better
 const CodeBlock = ml`<p>Here's some ${Language} ${CodeHead}</p>\n<pre>\n${rep(ml`${CodeIndent}${RandomCode}\n`, 10, 20)}\n</pre>\n<p>${CodeTail}</p>\n`;
 
+
+const otherRoots = UTF8([
+    "/cs?q=",
+    "/cs?q=",
+    "/cs?q=",
+    "https://html.duckduckgo.com/html/?q=robots.txt&ignore=",
+    // otherHosts, /* TODO: List of participating hosts goes here.
+]);
+
+const roots = UTF8([
+    ml`${kw('realroot')}`,
+    ml`${kw('realroot')}`,
+    ml`${kw('realroot')}`,
+    ml`${kw('realroot')}`,
+    ml`${kw('realroot')}`,
+    ml`${kw('realroot')}`,
+    ml`${kw('realroot')}`,
+    otherRoots,
+]);
+
 const outputModes = [
     ParagraphBlock,
+    ParagraphBlock,
+    ParagraphBlock,
+    FunFactBlock,
+    FunFactBlock,
     FunFactBlock,
     ListBlock,
+    ListBlock,
+    ListBlock,
+    StackOverflowBlock,
     StackOverflowBlock,
     CodeBlock,
+    CodeBlock,
+    HeadingBlock,
 ];
 
 function head(output:mlParser) {
@@ -814,7 +851,8 @@ export function* pageGenerator(
     let kw = {
         topic: topic.length > 3 ? enc.encode(topic) : synRobotsTxt[0],
         code: code.length > 0 ? enc.encode(code) : kEmpty,
-        root: root?.length ? enc.encode(root) : kEmpty,
+        realroot: root?.length ? enc.encode(root) : kEmpty,
+        root: roots,
     };
     let output = new mlParser(kw, hash, chunk_size, 8192);
 

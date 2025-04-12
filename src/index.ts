@@ -11,6 +11,7 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+
 const debug = false;
 const default_size = 131071;
 const default_chunk = 16384;
@@ -139,7 +140,7 @@ export default {
         const hash = new Uint32Array(await crypto.subtle.digest("SHA-256", enc.encode(request.url)));
 
         var total = 0;
-        const generator = pageGenerator(hash, url.pathname, default_size, default_chunk);
+        const generator = pageGenerator(hash, url.pathname, default_size, default_chunk, undefined, '<script type="text/javascript" src="/unpack.js"> </script>');
         const stream = new ReadableStream({
             async pull(controller) {
                 const { value, done } = generator.next();

@@ -817,7 +817,7 @@ function head(output:mlParser) {
 <html lang="en">
 <head><meta charset="UTF-8"/>
   <title>${PageTitle}</title>
-  <script type="text/javascript" src="unpack.js"> </script>
+  ${kw('headers')}
 </head>
 <body>
 <h1>${PageTitle}</h1>
@@ -842,7 +842,8 @@ export function* pageGenerator(
         path: string,
         goal_size:number = 1048500,
         chunk_size: number = 16384,
-        root: string|undefined = undefined) {
+        root: string|undefined = undefined,
+        headers: string|undefined = undefined) {
     path = URItoHTML(path);
     const enc = new TextEncoder();
     let vpath:string[] = path.split('/');
@@ -851,6 +852,7 @@ export function* pageGenerator(
     let kw = {
         topic: topic.length > 3 ? enc.encode(topic) : synRobotsTxt[0],
         code: code.length > 0 ? enc.encode(code) : kEmpty,
+        headers: headers?.length ? enc.encode(headers) : kEmpty,
         realroot: root?.length ? enc.encode(root) : kEmpty,
         root: roots,
     };

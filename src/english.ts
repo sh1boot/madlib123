@@ -891,11 +891,11 @@ export function* pageGenerator(
 
     let heading_prob = 40;
     while (total + output.length < goal_size) {
-        if (output.rand(100) < heading_prob) {
+        if (output.randint(100) < heading_prob) {
             output.push(HeadingBlock);
             heading_prob = 0;
         } else {
-            heading_prob = (heading_prob * 7 + 100) >>> 3;
+            heading_prob = (heading_prob * 15 + 100) >>> 4;
         }
         output.push(outputModes[output.randint(outputModes.length)]);
         if (output.length >= chunk_size) {

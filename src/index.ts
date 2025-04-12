@@ -16,8 +16,8 @@ const default_size = 131071;
 const default_chunk = 16384;
 
 // TODO: pluck this from git metadata or something?
-const kLastModified = "Tue, 01 Apr 2025 15:02:39 GMT";
-const kXMLLastModified = "2025-04-01";
+const kLastModified = "Tue, 11 Apr 2025 15:02:39 GMT";
+const kXMLLastModified = "2025-04-11";
 const kModificationDate = new Date(kLastModified);
 
 import { pageGenerator } from "./english";

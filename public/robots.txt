@@ -1,8 +1,0 @@
-User-Agent: *
-Allow: /public/
-Allow: /cs?crawl=allowed*
-
-User-Agent: *
-Disallow: /
-
-Sitemap: https:///sitemap.xml

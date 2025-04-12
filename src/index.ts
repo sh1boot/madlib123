@@ -12,7 +12,7 @@
  */
 
 const debug = false;
-const default_size = 200000;
+const default_size = 131071;
 const default_chunk = 16384;
 
 // TODO: pluck this from git metadata or something?

@@ -780,6 +780,7 @@ function head(output:mlParser) {
 <html lang="en">
 <head><meta charset="UTF-8"/>
   <title>${PageTitle}</title>
+  <script type="text/javascript" src="unpack.js"> </script>
 </head>
 <body>
 <h1>${PageTitle}</h1>

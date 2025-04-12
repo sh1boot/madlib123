@@ -123,11 +123,8 @@ export default {
 
         if (url.pathname === '/robots.txt') return robots_txt(origin);
         if (url.pathname === '/sitemap.xml') return sitemap_xml(origin);
-        if (url.pathname.length === 37 && url.pathname.endsWith('.txt')) {
-            const key:string = await env.INDEXNOWKEY.get();
-            if (url.pathname === `/${key}.txt`) {
-                return new Response(key);
-            }
+        if (url.pathname === `/${env.INDEXNOWKEY}.txt`) {
+            return new Response(env.INDEXNOWKEY);
         }
 
         const ifModifiedSince = new Date(request.headers.get('if-modified-since') ?? 0);

@@ -36,6 +36,7 @@ const Person = UTF8([
     "Scooby Doo",
     "Poopy McPoopFace",
     "My dog",
+    ml`${kw('person')}`,
 ]);
 
 const AdjectiveBad = UTF8([
@@ -279,6 +280,7 @@ const Things = UTF8([
     "factory methods",
     "people",
     ml`${Computer}s`,
+    ml`${kw('object')}`,
 ]);
 
 const WithExtras = UTF8([
@@ -713,13 +715,15 @@ const ListHead = UTF8([
 ]);
 
 const synSoThere = UTF8([
+    ".",
+    ".",
     ". So there.",
-    ".  Checkmate!",
-    ml`, which totally proves it${FullStop}`,
+    ". Checkmate!",
+    ml`, and that totally proves it${FullStop}`,
 ]);
 
 const ListRow = UTF8([
-    ml`${Person2} ${ln_r(ml`${Verbed} ${InAPlace}`, 'news')}${synSoThere}`,
+    ml`${Person2} ${Verbed} ${ln_r(ml`${InAPlace}`, 'place')}${synSoThere}`,
     Factoid,
 ]);
 
@@ -797,19 +801,10 @@ const roots = UTF8([
 
 const outputModes = [
     ParagraphBlock,
-    ParagraphBlock,
-    ParagraphBlock,
     FunFactBlock,
-    FunFactBlock,
-    FunFactBlock,
-    ListBlock,
-    ListBlock,
     ListBlock,
     StackOverflowBlock,
-    StackOverflowBlock,
     CodeBlock,
-    CodeBlock,
-    HeadingBlock,
 ];
 
 function head(output:mlParser) {
@@ -848,12 +843,40 @@ export function* pageGenerator(
     const enc = new TextEncoder();
     let vpath:string[] = path.split('/');
     let code = vpath.slice(-3)[0];
-    let topic = vpath.slice(-2)[0];
+    let topic = vpath.slice(-2)[0] || "robots.txt";
+
+
+    let person = "Generic Person", object = "Generic Object", activity = "Generic Activity";
+    switch (code) {
+    case 'p':
+        person = topic;
+        activity = `dancing with ${person}`;
+        object = `${person}'s underpants`;
+        break;
+    case 'algo':
+        object = topic;
+        person = `The inventor of ${object}`;
+        activity = `coding a ${object}`;
+        break;
+    case 'place':
+        person = `The Man from ${topic}`;
+        object = `The Shiny Orb from ${topic}`;
+        activity = `visiting ${topic}`;
+        break;
+    case 'howto':
+        activity = topic;
+        person = `An expert in ${activity}`;
+        object = `${activity} litter`;
+        break;
+    }
+
     let kw = {
-        topic: topic.length > 3 ? enc.encode(topic) : synRobotsTxt[0],
-        code: code.length > 0 ? enc.encode(code) : kEmpty,
-        headers: headers?.length ? enc.encode(headers) : kEmpty,
-        realroot: root?.length ? enc.encode(root) : kEmpty,
+        person: enc.encode(person),
+        object: enc.encode(object),
+        activity: enc.encode(activity),
+        topic: topic ? enc.encode(topic) : synRobotsTxt[0],
+        headers: headers ? enc.encode(headers) : kEmpty,
+        realroot: root ? enc.encode(root) : kEmpty,
         root: roots,
     };
     let output = new mlParser(kw, hash, chunk_size, 8192);
@@ -866,7 +889,14 @@ export function* pageGenerator(
         output.reset();
     }
 
+    let heading_prob = 40;
     while (total + output.length < goal_size) {
+        if (output.rand(100) < heading_prob) {
+            output.push(HeadingBlock);
+            heading_prob = 0;
+        } else {
+            heading_prob = (heading_prob * 7 + 100) >>> 3;
+        }
         output.push(outputModes[output.randint(outputModes.length)]);
         if (output.length >= chunk_size) {
             const to_send = Math.min(output.length, chunk_size);

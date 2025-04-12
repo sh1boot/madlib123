@@ -189,6 +189,7 @@ const CoachableActivity = UTF8([
     "pilates",
     "life",
     "birth",
+    "flatulism",
 ]);
 
 const Pet = UTF8([
@@ -207,7 +208,6 @@ const Professional = UTF8([
     "earwax specialist",
     "shaman",
     "meth dealer",
-    "fluffer",
     ml`${CoachableActivity} coach`,
     ml`${Pet} trainer`,
     ml`${Pet} groomer`,

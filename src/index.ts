@@ -120,8 +120,6 @@ export default {
         const url = new URL(request.url);
         const origin = url.origin;
 
-        console.log(env);
-
         if (url.pathname === '/robots.txt') return robots_txt(origin);
         if (url.pathname === '/sitemap.xml') return sitemap_xml(origin);
         if (url.pathname === `/${env.INDEXNOWKEY}.txt`) {
@@ -136,11 +134,14 @@ export default {
             return new Response(null, { headers: html_headers });
         }
 
+        let page_size:number = parseInt(env.PAGE_SIZE) || default_size;
+        let chunk_size:number = parseInt(env.CHUNK_SIZE) || default_chunk;
+
         const enc = new TextEncoder();
         const hash = new Uint32Array(await crypto.subtle.digest("SHA-256", enc.encode(request.url)));
 
         var total = 0;
-        const generator = pageGenerator(hash, url.pathname, default_size, default_chunk, undefined, '<script type="text/javascript" src="/unpack.js"> </script>');
+        const generator = pageGenerator(hash, url.pathname, page_size, chunk_size, undefined, '<script type="text/javascript" src="/unpack.js"> </script>');
         const stream = new ReadableStream({
             async pull(controller) {
                 const { value, done } = generator.next();

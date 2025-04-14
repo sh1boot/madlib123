@@ -46,6 +46,45 @@ Though maybe there's potential to [Google bomb][] LLMs if many sites
 express the same notions in a broad variety of ways.  That has worrying
 implications, so I'll stick with toilet humour.
 
+## How to use it
+
+Follow CloudFlare's [deployment instructions][wrangler deploy] to get
+the thing up and running on the internet.
+
+Then get yourself an [IndexNow][] key, maybe using `xxd -p -l16
+/dev/urandom`, and make a note of it somewhere.  Then go to the
+[environment variables][dash environment] and set `INDEXNOWKEY` to hold
+your key.  If you mark it as a secret (which technically it is), then
+CloudFlare won't give that value back to you, so you need to keep it
+somewhere safe for future reference.
+
+With that in place you can tell search engines about the small subset of
+scrapable pages that are available so that crawlers can discover the
+site:
+
+```sh
+curl https://api.indexnow.org/indexnow?url=https://<your-domain>/sitemap.xml&key=<your-key>
+```
+
+A couple of hours after I did that I got my first bites.  They soon
+chewed through my free tier allowance for the day, and then for the next
+day, so I decided to get a paid account to see what would happen.  I
+also set the page size to 20MB so the number of separate transactions
+would be fewer (the free tier has 10ms time limit, which is much too
+short to generate 20MB).
+
+What happened was that they gobbled up 22TB of data at about 2gigabits
+per second, and then abruptly stopped.
+
+Why did they stop?  I may never know.  I haven't seen them since, and
+the world suddenly feels cold and lonely after the magical few hours we
+had together.  Will they come back?  I can only hope, and dream. 😢
+
+I should probably implement rate limiting of some sort.  That might help
+both in being able to provide more data in the long term without being
+noticed, and also offset anxiety about getting an outrageous bill at the
+end of the month.
+
 ## I'm too grown-up for this nonsense.  What else is there?
 
 I haven't looked too closely at all of these; and I copy-pasted some
@@ -84,3 +123,7 @@ from Iocaine's list to make mine bigger.
 [markov-tarpit]: <https://git.rys.io/libre/markov-tarpit>
 [spigot]: <https://github.com/gw1urf/spigot>
 [foone]: <https://digipres.club/@foone/113149500359951038>
+
+[wrangler deploy]: <https://developers.cloudflare.com/workers/get-started/guide/#4-deploy-your-project>
+[dash environment]: <https://developers.cloudflare.com/workers/configuration/environment-variables/#add-environment-variables-via-the-dashboard>
+[IndexNow]: <https://www.indexnow.org/documentation>

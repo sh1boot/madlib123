@@ -16,6 +16,9 @@ const debug = false;
 const default_size = 131071;
 const default_chunk = 16384;
 
+const client_side_path = '/cs?q=';
+const crawlable_path = '/public';
+
 // TODO: pluck this from git metadata or something?
 const kLastModified = "Tue, 11 Apr 2025 15:02:39 GMT";
 const kXMLLastModified = "2025-04-11";
@@ -23,6 +26,7 @@ const kModificationDate = new Date(kLastModified);
 
 import { pageGenerator } from "./english";
 
+const extra_header = '<script type="text/javascript" src="/unpack.js"> </script>';
 
 const html_headers = new Headers({
     'Content-Type': 'text/html',
@@ -41,8 +45,8 @@ function robots_txt(origin: string): Response {
 `Sitemap: ${origin}/sitemap.xml
 
 user-agent: *
-Allow: /public/
-Allow: /cs?crawl=allowed*
+Allow: ${crawlable_path}/
+Allow: ${client_side_path}${crawlable_path}/*
 Allow: /sitemap.xml
 
 user-agent: *
@@ -100,14 +104,16 @@ function sitemap_xml(origin: string): Response {
             words.push(v[n % v.length | 0]);
             n = n / v.length >>> 0;
         });
-        return `${n+100}/start/${escapeURL(words.join("-"))}`;
+        return `${n+100}/start/${escapeURL(words.join('-'))}`;
     }
 
     var pagelist = [];
+    const root = [
+        origin + crawlable_path,
+        origin + client_side_path + crawlable_path,
+    ];
     for (let i = 0; i < 1024; ++i) {
-        let cs:string = (i & 1) ? "/cs?crawl=allowed&amp;q=" : "";
-        pagelist.push(
-`<url><loc>${origin}${cs}/public/${RandomURIPath(i)}/</loc><lastmod>${kXMLLastModified}</lastmod></url>`);
+        pagelist.push(`<url><loc>${root[i % root.length]}/${RandomURIPath(i)}/</loc><lastmod>${kXMLLastModified}</lastmod></url>`);
     }
     return new Response(`<?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -136,12 +142,31 @@ export default {
 
         let page_size:number = parseInt(env.PAGE_SIZE) || default_size;
         let chunk_size:number = parseInt(env.CHUNK_SIZE) || default_chunk;
+        let path_start = '/';
+        if (url.pathname.startsWith(crawlable_path)) {
+            path_start = crawlable_path;
+            page_size = Math.min(page_size, 1000000);
+        }
 
         const enc = new TextEncoder();
+        const ratelimit = await env.RATE_LIMITER.limit({ key: path_start });
         const hash = new Uint32Array(await crypto.subtle.digest("SHA-256", enc.encode(request.url)));
+        if (!ratelimit.success) {
+            let choice = Math.random() * 3 >>> 0;
+            switch (choice) {
+            case 0:
+                return new Response('307 temporary redirect - rate limit exceeded', {
+                    status: 307,
+                    headers: new Headers({ 'location': client_side_path + url.pathname }),
+                });
+            default:
+                return new Response('429 Failure - rate limit exceeded', { status: 429 });
+            }
+        }
+
 
         var total = 0;
-        const generator = pageGenerator(hash, url.pathname, page_size, chunk_size, undefined, '<script type="text/javascript" src="/unpack.js"> </script>');
+        const generator = pageGenerator(hash, url.pathname, page_size, chunk_size, undefined, extra_header );
         const stream = new ReadableStream({
             async pull(controller) {
                 const { value, done } = generator.next();

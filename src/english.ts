@@ -1,6 +1,6 @@
 const debug = false;
 
-import {mlParser, mlType, ml, kw, ln_r, ln_u, rep } from './madlib';
+import { mlParser, mlType, ml, kw, ln_r, ln_u, rep } from './madlib';
 
 const UTF8 = (v:(string|mlType)[]):(Uint8Array|mlType)[] => {
     const utf8enc = new TextEncoder();
@@ -36,7 +36,7 @@ const Person = UTF8([
     "Scooby Doo",
     "Poopy McPoopFace",
     "My dog",
-    ml`${kw('person')}`,
+    kw('person'),
 ]);
 
 const AdjectiveBad = UTF8([
@@ -281,7 +281,7 @@ const Things = UTF8([
     "factory methods",
     "people",
     ml`${Computer}s`,
-    ml`${kw('object')}`,
+    kw('object'),
 ]);
 
 const WithExtras = UTF8([
@@ -709,7 +709,7 @@ const kFactPart5 = UTF8([
 ]);
 
 const ListHead = UTF8([
-    ml`${synReportedly}`,
+    synReportedly,
     ml`Ten reasons ${Things} are better than ${Things}`,
     ml`Top reasons to check ${synRobotsTxt} before ${synScraping}`,
     ml`TL;DR`,
@@ -790,13 +790,13 @@ const otherRoots = UTF8([
 ]);
 
 const roots = UTF8([
-    ml`${kw('realroot')}`,
-    ml`${kw('realroot')}`,
-    ml`${kw('realroot')}`,
-    ml`${kw('realroot')}`,
-    ml`${kw('realroot')}`,
-    ml`${kw('realroot')}`,
-    ml`${kw('realroot')}`,
+    kw('realroot'),
+    kw('realroot'),
+    kw('realroot'),
+    kw('realroot'),
+    kw('realroot'),
+    kw('realroot'),
+    ml`${kw('realroot')}/${kw('dailychange')}`,
     otherRoots,
 ]);
 
@@ -833,14 +833,16 @@ function URItoHTML(s:string):string {
              .replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-export function* pageGenerator(
-        hash: Uint32Array,
+export function* pageGenerator(options: {
         path: string,
-        goal_size:number = 1048500,
-        chunk_size: number = 16384,
-        root: string|undefined = undefined,
-        headers: string|undefined = undefined) {
-    path = URItoHTML(path);
+        hash: Uint32Array,
+        page_size?:number,
+        chunk_size?: number,
+        root?: string,
+        headers?: string}) {
+    const page_size = options.page_size || 1048576;
+    const chunk_size = options.chunk_size || 16384;
+    let path = URItoHTML(options.path);
     const enc = new TextEncoder();
     let vpath:string[] = path.split('/');
     let code = vpath.slice(-3)[0];
@@ -875,12 +877,13 @@ export function* pageGenerator(
         person: enc.encode(person),
         object: enc.encode(object),
         activity: enc.encode(activity),
-        topic: topic ? enc.encode(topic) : synRobotsTxt[0],
-        headers: headers ? enc.encode(headers) : kEmpty,
-        realroot: root ? enc.encode(root) : kEmpty,
+        topic: enc.encode(topic),
+        headers: enc.encode(options.headers ?? ''),
+        realroot: enc.encode(options.root ?? ''),
+        dailychange: enc.encode(`d${Date.now() >>> 16}`),
         root: roots,
     };
-    let output = new mlParser(kw, hash, chunk_size, 8192);
+    let output = new mlParser(kw, options.hash, chunk_size, 8192);
 
     let total = 0;
 
@@ -891,11 +894,12 @@ export function* pageGenerator(
     }
 
     let heading_prob = 40;
-    while (total + output.length < goal_size) {
+    while (total + output.length < page_size) {
         if (output.randint(100) < heading_prob) {
             output.push(HeadingBlock);
             heading_prob = 0;
         } else {
+            // asymptotic approach to 100% probability
             heading_prob = (heading_prob * 15 + 100) >>> 4;
         }
         output.push(outputModes[output.randint(outputModes.length)]);

@@ -1,7 +1,7 @@
-# another unnamed project
+# Yellow Dust ECB5
 
-Generates nonsense text from a [CloudFlare Worker][], intended to disrupt AI
-scrapers iff they fail to obey [robots.txt][].
+Generates nonsense text from a [CloudFlare Worker][], intended to
+disrupt AI scrapers when they fail to obey [robots.txt][].
 
 ## Why?
 
@@ -11,9 +11,14 @@ when they didn't sign up for that crap.
 
 Part of what made me press ahead with this idea was the hypothesis that
 less might really be more as far as tarpit content goes.  That
-clumsily-formed, repetitive, and distinctly puerile content would be
+clumsily-formed, repetitive, and distinctly puerile content could be
 more problematic as training data than something competently formed by
-more complex models.
+more complex models.  In all likelihood I have failed to understand the
+proprietary filters that such developers use to curate data; but at a
+minimum this is more chaff to slow the filters down.
+
+The other advantage is raw bandwidth.  This technique delivers terabytes
+of data per hour.
 
 I've seen a few other projects which do things different ways, but
 CloudFlare offers a bit of free edge-based run-time so I thought I'd see
@@ -23,9 +28,9 @@ really know JavaScript so I'm really the wrong person for that job.
 
 Ideally the content would be rendered client-side, so the scraper pays
 all the costs.  Some, but not all scrapers run javascript, but those
-that do use resource constraints.  A client-side renderer is delivered
-with the generated pages, and if that code does get executed then
-the resulting links will all go to static pages with explicit
+that do use resource limits.  All the same, a client-side renderer is
+delivered with the generated pages, and if that code does get executed
+then the resulting links will all go to static pages with explicit
 client-side rendering to alleviate server costs.
 
 ## OK, but why is the output so childish?
@@ -63,27 +68,13 @@ scrapable pages that are available so that crawlers can discover the
 site:
 
 ```sh
-curl https://api.indexnow.org/indexnow?url=https://<your-domain>/sitemap.xml&key=<your-key>
+curl "https://api.indexnow.org/indexnow?url=https://<your-domain>/sitemap.xml&key=<your-key>"
 ```
 
-A couple of hours after I did that I got my first bites.  They soon
-chewed through my free tier allowance for the day, and then for the next
-day, so I decided to get a paid account to see what would happen.  I
-also set the page size to 20MB so the number of separate transactions
-would be fewer (the free tier has 10ms time limit, which is much too
-short to generate 20MB).
-
-What happened was that they gobbled up 22TB of data at about 2gigabits
-per second, and then abruptly stopped.
-
-Why did they stop?  I may never know.  I haven't seen them since, and
-the world suddenly feels cold and lonely after the magical few hours we
-had together.  Will they come back?  I can only hope, and dream. 😢
-
-I should probably implement rate limiting of some sort.  That might help
-both in being able to provide more data in the long term without being
-noticed, and also offset anxiety about getting an outrageous bill at the
-end of the month.
+A couple of hours after I did that I got my first bites, and off we
+went.  The biggest scraper stopped after eight hours and 22TB and I was
+afraid the site had been blacklisted, but then they came back a few days
+later and scraped the same site for over the same times of day.
 
 ## I'm too grown-up for this nonsense.  What else is there?
 

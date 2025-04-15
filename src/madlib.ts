@@ -194,7 +194,7 @@ export class mlParser {
         }
     }
     static readonly kBadChars = new Uint32Array([0xffffffff, 0xfc00987d, 0x78000001, 0xa8000001]);
-    static readonly kLinkStart = ml`<a href="${kw('root')}/${(r:number)=>r>>>16}/${(r:number)=>r>>>16}/`;
+    static readonly kLinkStart = ml`<a href="${kw('root')}/${(r:number)=>r>>>14}/${(r:number)=>r>>>14}/`;
     static readonly kLinkEnd = UTF8('/">');
     static readonly kSpanEnd = UTF8('</a>');
     static readonly kSlash = 47;

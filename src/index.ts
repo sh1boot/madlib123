@@ -13,19 +13,20 @@
 
 
 const debug = false;
-const default_size = 131071;
-const default_chunk = 16384;
 
 const client_side_path = '/cs?q=';
 const crawlable_path = '/public';
 
-// TODO: pluck this from git metadata or something?
-const kLastModified = "Tue, 11 Apr 2025 15:02:39 GMT";
-const kXMLLastModified = "2025-04-11";
-const kModificationDate = new Date(kLastModified);
-
+import { env } from "cloudflare:workers";
 import { pageGenerator } from "./english";
 
+const default_size:number = parseInt(env.PAGE_SIZE) || 131071;
+const default_chunk:number = parseInt(env.CHUNK_SIZE) || 16384;
+const kIndexNowKey:string = env.INDEXNOWKEY ?? '\u03c0';
+const kIndexNowKeyFile = `/${kIndexNowKey}.txt`;
+const kModificationDate = new Date(env.CF_VERSION_METADATA.timestamp || "Wed, 16 Apr 2025 00:00:00 GMT");
+const kLastModified = kModificationDate.toUTCString();
+const kXMLLastModified = kModificationDate.toISOString();
 const extra_header = '<script type="text/javascript" src="/unpack.js"> </script>';
 
 const html_headers = new Headers({
@@ -37,6 +38,7 @@ const html_headers = new Headers({
 const xml_headers = new Headers({
     'Content-Type': 'application/xml',
     'Cache-Control': 'immutable, public, max-age=604800',
+    'Last-Modified': kLastModified,
 });
 
 
@@ -128,8 +130,8 @@ export default {
 
         if (url.pathname === '/robots.txt') return robots_txt(origin);
         if (url.pathname === '/sitemap.xml') return sitemap_xml(origin);
-        if (url.pathname === `/${env.INDEXNOWKEY}.txt`) {
-            return new Response(env.INDEXNOWKEY);
+        if (url.pathname === kIndexNowKeyFile) {
+            return new Response(kIndexNowKey);
         }
 
         const ifModifiedSince = new Date(request.headers.get('if-modified-since') ?? 0);
@@ -140,8 +142,8 @@ export default {
             return new Response(null, { headers: html_headers });
         }
 
-        let page_size:number = parseInt(env.PAGE_SIZE) || default_size;
-        let chunk_size:number = parseInt(env.CHUNK_SIZE) || default_chunk;
+        let page_size = default_size;
+        let chunk_size = default_chunk;
         let path_start = '/';
         if (url.pathname.startsWith(crawlable_path)) {
             path_start = crawlable_path;
@@ -155,23 +157,32 @@ export default {
             let choice = Math.random() * 3 >>> 0;
             switch (choice) {
             case 0:
+                // TODO: delete log call; it's just a quick test
+                console.log("Trying 307 workaround for rate limit", ratelimit);
                 return new Response('307 temporary redirect - rate limit exceeded', {
                     status: 307,
                     headers: new Headers({ 'location': client_side_path + url.pathname }),
                 });
             default:
+                // TODO: delete log call; just a quick test
+                console.log("Returning 429 rate limit", ratelimit);
                 return new Response('429 Failure - rate limit exceeded', { status: 429 });
             }
         }
 
 
         var total = 0;
-        const generator = pageGenerator(hash, url.pathname, page_size, chunk_size, undefined, extra_header );
+        const generator = pageGenerator({
+            path: url.pathname,
+            hash: hash,
+            headers: extra_header,
+            page_size: page_size,
+            chunk_size: chunk_size,
+        });
         const stream = new ReadableStream({
             async pull(controller) {
                 const { value, done } = generator.next();
                 if (done) {
-                    console.log("page size:", total);
                     controller.close();
                 } else {
                     total += value.length;

@@ -12,12 +12,15 @@
 	],
     "build": {
         "command": "npx webpack",
-        "watch_dir": "/dev/null"
+        "watch_dir": ".change"
     },
 	"assets": {
 		"binding": "ASSETS",
 		"directory": "./public"
 	},
+    "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+    },
 	"observability": {
 		"enabled": true
 	},

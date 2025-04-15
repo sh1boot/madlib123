@@ -57,6 +57,7 @@ const Adjective = UTF8([
     "colourful",
     "fragrant",
     "flavourful",
+    "greasy",
     "grody",
     "ground-breaking",
     "hairy",

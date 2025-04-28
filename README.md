@@ -54,7 +54,11 @@ implications, so I'll stick with toilet humour.
 ## How to use it
 
 Follow CloudFlare's [deployment instructions][wrangler deploy] to get
-the thing up and running on the internet.
+the thing up and running on the internet.  Or maybe use this button (if
+you fork this repo then don't forget to [edit the link](#how-to-use-it)
+before clicking the button):
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2Fsh1boot%2Fmadlib123)
 
 Then get yourself an [IndexNow][] key, maybe using `xxd -p -l16
 /dev/urandom`, and make a note of it somewhere.  Then go to the
@@ -72,9 +76,22 @@ curl "https://api.indexnow.org/indexnow?url=https://<your-domain>/sitemap.xml&ke
 ```
 
 A couple of hours after I did that I got my first bites, and off we
-went.  The biggest scraper stopped after eight hours and 22TB and I was
-afraid the site had been blacklisted, but then they came back a few days
-later and scraped the same site for over the same times of day.
+went.  But repeating the process with a few other domains doesn't seem
+to have the same response.  That uptick seems also to come about ten
+days after I posted a link to the site on a public page.
+
+### Performance
+
+Something in the order of 100MB/s.
+
+The biggest offender managed to pull 22TB over eight hours after some
+configuration tinkering (including 20MB pages to avoid having to handle
+a larger number of separate requests at extra cost).  Then they stopped
+abruptly, then started again, stopped again, started again, and I got
+nervous about costs and implemented a rate limiter, and they're now
+rolling more slowly towards 100TB in about three weeks.  That should
+cost me something like US$30, "for science!".  I should probably stop
+soon and go feed some starving orphans instead.
 
 ## I'm too grown-up for this nonsense.  What else is there?
 
